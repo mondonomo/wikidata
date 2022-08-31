@@ -1,4 +1,4 @@
-wikilang2iso = {'ko-kp': ['ko_Kore_KP', 'ko_Latn_KP'],
+wikilang2provenance = {'ko-kp': ['ko_Kore_KP', 'ko_Latn_KP'],
            'bn': ['bn_Latn_BD',
             'bn_Beng_NP',
             'bn_Beng_GB',
