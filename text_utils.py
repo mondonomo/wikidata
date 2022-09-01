@@ -3,8 +3,7 @@ import re
 zag = re.compile(' ?\([^\)]*\)')
 remove_reg = re.compile('\(|\)|\.|\*|\?')
 resplit = re.compile('/|\n')
-retok = re.compile("[\u200B\u202F\u205F\u3000\s・]+")
-
+retok = re.compile("[\u2008\u200B\u202F\u205F\u3000\s・·]+")
 NON_SPACED_LANGUAGE_RANGES = ( # from T5
     '\u1000-\u104f',  # Burmese
     '\u4e00-\u9fff',  # CJK Unified Ideographs
@@ -54,6 +53,6 @@ def tokenise(s):
 
 if __name__ == '__main__':
     print(hex(ord('태')))
-    testt = ['ジョージ・ワシントン', 'テミン', '태민', '李泰民', '李泰民']
+    testt = ['佐治·華盛頓', 'Marko markovi', 'ジョージ・ワシントン', 'テミン', '태민', '李泰民', '李泰民']
     for s in testt:
-        print(s, tokenise(s))
+        print(s, tokenise(s), retok.split(s))
