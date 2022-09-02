@@ -30,3 +30,4 @@ def qid_lab_get(qid:int, lang:str=None, include_alt:bool=False):
 
 if __name__ == '__main__':
     print(qid_lab_get(42, lang='th', include_alt=True))
+    print(qid_lab_get(6348))

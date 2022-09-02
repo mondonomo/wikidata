@@ -25,6 +25,7 @@ vals = [{'name': 'fn', 'props': ['P735']}, {'name': 'ln', 'props': ['P734', 'P19
         {'name': 'title', 'props': ['P39', 'P410', 'P511', 'P97', 'P410', 'P468', 'P512']},
         {'name': 'sufix', 'props': ['P1035']}, {'name': 'positions', 'props': ['P39', 'P106', 'P8413']},
         {'name': 'country', 'props': ['P27']}, {'name': 'birth_place', 'props': ['P19']},
+        {'name': 'language', 'props': ['P1412']},
         {'name': 'name_native', 'props': ['P1559']}, {'name': 'name_born', 'props': ['P1477']},
         {'name': 'dob', 'props': ['P569']},
         {'name': 'picture', 'props': ['P18']},
@@ -127,7 +128,7 @@ if __name__ == '__main__':
         lines = fin.readlines(1_000_000_000)
         br += 1
         brr += len(lines)
-        pbar.update(brr)
+        pbar.update(len(lines))
 
         if len(lines) == 0:
             gotovo = True # još samo loši

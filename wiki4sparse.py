@@ -33,8 +33,13 @@ def extract(line):
     l = line.decode("utf-8").strip(',\r\n ')
     try:
         l = orjson.loads(l)
-    except:
-        return None, None, None, None
+    except Exception as e:
+        print(e)
+        return None, None#, None, None
+
+    if l['type'] != 'item' or l['id'][0] != 'Q':
+        return None, None
+
 
     labelitems = set()
     labels_lang = defaultdict(set)
@@ -56,31 +61,32 @@ def extract(line):
                     labels_lang[ni].add(v2["language"])
 
     graph = []
-    for P in PS:
-        if P in l['claims']:
-            for s in l['claims'][P]:
-               if 'datavalue' in s['mainsnak']:
-                   if 'id' in s['mainsnak']['datavalue']['value']:
-                       graph.append((P, int(s['mainsnak']['datavalue']['value']['id'][1:])))
-                   else:
-                        pass
+    if False:
+        for P in PS:
+            if P in l['claims']:
+                for s in l['claims'][P]:
+                   if 'datavalue' in s['mainsnak']:
+                       if 'id' in s['mainsnak']['datavalue']['value']:
+                           graph.append((P, int(s['mainsnak']['datavalue']['value']['id'][1:])))
+                       else:
+                            pass
 
-    lang_comb = Counter([';'.join(sorted(l)) for l in labels_lang.values()])
-    return l['id'][1:], labelitems, lang_comb, graph
+    #lang_comb = Counter([';'.join(sorted(l)) for l in labels_lang.values()])
+    return l['id'][1:], labelitems#, lang_comb, graph
 
 
 if __name__ == '__main__':
     pmap = Pool(20)
     TEST = False
     BATCH_SIZE = 1_000_000_000 if not TEST else 10_000_000
-    if False:
+    if True:
         max_q = 0
-        lang_combs = Counter()
+        #lang_combs = Counter()
         fin = gzip.open(f'{BASE_DIR}/latest-all.json.gz', 'rb')
         fin.read(2)  # skip first two bytes: "{\n"
         label4sparse = open(f'{BASE_DIR}/label4sparse.tmp', 'w')
-        graph4sparse = open(f'{BASE_DIR}/graph4sparse.tmp', 'w')
-        pbar = tqdm(fin, total=96_000_000)
+        #graph4sparse = open(f'{BASE_DIR}/graph4sparse.tmp', 'w')
+        pbar = tqdm(fin, total=98_364_283)
         while True:
             lines = fin.readlines(BATCH_SIZE)
             if len(lines) == 0:
@@ -89,13 +95,15 @@ if __name__ == '__main__':
             #print(len(list(rec)), len(lines))
             for l in rec:
                 #qid, labels, lang_comb, graph = extract(l)
-                qid, labels, lang_comb, graph = l
+                qid, labels = l
                 if qid:
-                    lang_combs.update(lang_comb)
+                    #lang_combs.update(lang_comb)
                     label4sparse.write(f'{qid}\t{",".join(labels)}\n')
-                    for p, qid2 in graph:
-                        graph4sparse.write(f'{qid}\t{qid2}\t{p}\n')
+                    #for p, qid2 in graph:
+                    #    graph4sparse.write(f'{qid}\t{qid2}\t{p}\n')
                     qid = int(qid)
+                    if qid == 6348:
+                        print(qid)
                     #print(max_q, qid)
                     if qid > max_q:
                         max_q = qid
@@ -103,15 +111,16 @@ if __name__ == '__main__':
             if TEST:
                 break
 
-        graph4sparse.close()
+        #graph4sparse.close()
         label4sparse.close()
-        j = {'maxq': max_q, 'langs_comb': dict(lang_combs)}
+        j = {'maxq': max_q}
         with open(f'{BASE_DIR}/label4sparse.json', 'w') as fo:
             json.dump(j, fo)
-    elif True:
+
+    if True:
         j = json.load(open(f'{BASE_DIR}/label4sparse.json'))
         QUS = int(j['maxq'])
-        lang2id = {k: i+1 for i, k in enumerate(j['langs_comb'])}
+        lang2id = {}  #{k: i+1 for i, k in enumerate(j['langs_comb'])}
         mat = lil_matrix((QUS+1, len(trie)), dtype=np.int32)
         trie = None
         print('punim ...')
@@ -132,15 +141,16 @@ if __name__ == '__main__':
                 for label, langs in l_alt.items():
                     langs = ';'.join(sorted(langs))
                     if langs not in lang2id:
-                        lang2id[langs] = len(lang2id)
+                        lang2id[langs] = len(lang2id)+1
                     mat[qid, label] = -lang2id[langs]
                 for label, langs in l_main.items():
                     langs = ';'.join(sorted(langs))
                     #print(qid, label, mat.shape, lang2id[langs], type(qid), type(label))
                     if langs not in lang2id:
-                        lang2id[langs] = len(lang2id)
+                        lang2id[langs] = len(lang2id)+1
                     mat[qid, label] = lang2id[langs]
-
+                #print(len(l_main), len(l_alt), len(l_main|l_alt))
+        #exit()
         print('snimam ...')
         save_npz(f'{BASE_DIR}/qidlabel', csr_matrix(mat))
         j = {'maxq': QUS, 'lang2id': lang2id}
