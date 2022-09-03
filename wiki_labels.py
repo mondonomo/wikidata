@@ -16,7 +16,10 @@ qid_lab = load_npz(f'{DATA_DIR}/qidlabel.npz')
 
 
 def qid_lab_get(qid:int, lang:str=None, include_alt:bool=False):
-    _, ls = qid_lab[qid].nonzero()
+    try:
+        _, ls = qid_lab[qid].nonzero()
+    except:
+        return {}
     values = qid_lab[qid]
     rec = {}
     for lid in ls:
