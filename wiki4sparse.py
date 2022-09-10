@@ -13,8 +13,10 @@ import marisa_trie
 from text_utils import cl
 #from wiki_ent_ids import wikiloc, wikiln, wikifn, wikiorg, wiki_title
 from tqdm import tqdm
+from pathlib import Path
 
 BASE_DIR = '/backup/wikidata'
+DATA_DIR = f'{Path(__file__).resolve().parent}/data'
 
 zag = re.compile(' ?\([^\)]*\)')
 resplit = re.compile('/|\n')
@@ -79,7 +81,7 @@ if __name__ == '__main__':
     pmap = Pool(20)
     TEST = False
     BATCH_SIZE = 1_000_000_000 if not TEST else 10_000_000
-    if True:
+    if False:
         max_q = 0
         #lang_combs = Counter()
         fin = gzip.open(f'{BASE_DIR}/latest-all.json.gz', 'rb')
@@ -144,38 +146,64 @@ if __name__ == '__main__':
                         lang2id[langs] = len(lang2id)+1
                     mat[qid, label] = -lang2id[langs]
                 for label, langs in l_main.items():
-                    langs = ';'.join(sorted(langs))
+                    if mat[qid, label]:
+                        langs = ';'.join(sorted(langs))
+                    else: # overlap alternative labels & main - include all
+                        langs = ';'.join(sorted(set(langs.union(l_alt[label]))))
                     #print(qid, label, mat.shape, lang2id[langs], type(qid), type(label))
                     if langs not in lang2id:
                         lang2id[langs] = len(lang2id)+1
                     mat[qid, label] = lang2id[langs]
+
                 #print(len(l_main), len(l_alt), len(l_main|l_alt))
         #exit()
-        print('snimam ...')
-        save_npz(f'{BASE_DIR}/qidlabel', csr_matrix(mat))
+        print('snimam ...', '#lang2id', len(lang2id))
+        save_npz(f'{DATA_DIR}/qidlabel', csr_matrix(mat))
         j = {'maxq': QUS, 'lang2id': lang2id}
-        with open(f'{BASE_DIR}/label4sparse.json', 'w') as fo:
+        with open(f'{DATA_DIR}/label4sparse.json', 'w') as fo:
             json.dump(j, fo)
         mat = None
         print('gotovo')
 
-    elif True:
+    if True:
+        j = json.load(open(f'{BASE_DIR}/label4sparse.json'))
+        QUS = int(j['maxq'])
+        lang2id = dict(j['lang2id'])
+        label4sparse = open(f'{BASE_DIR}/label4sparse.tmp', 'r')
+        mat = lil_matrix((len(trie), QUS + 2), dtype=np.int32)
+        print('punim ...,', mat.shape)
+        for l in tqdm(label4sparse, total=QUS):
+            qid, labels = l.strip('\n\r').split('\t')
+            qid = int(qid)
+            l_main = defaultdict(set)
+            l_alt = defaultdict(set)
+            for lab in labels.split(','):
+                label_id, lang, tip = lab.split('_')
+                label_id = int(label_id)
+                if tip == 'M':
+                    l_main[label_id].add(lang)
+                else:
+                    l_alt[label_id].add(lang)
+            for label, langs in l_alt.items():
+                langs = ';'.join(sorted(langs))
+                if langs not in lang2id:
+                    lang2id[langs] = len(lang2id) + 1
+                mat[label, qid] = -lang2id[langs]
+            for label, langs in l_main.items():
+                if mat[label, qid]:
+                    langs = ';'.join(sorted(langs))
+                else:  # overlap alternative labels & main - include all
+                    langs = ';'.join(sorted(set(langs.union(l_alt[label]))))
+                if langs not in lang2id:
+                    lang2id[langs] = len(lang2id) + 1
+                mat[label, qid] = lang2id[langs]
 
-        if False:
-            label4sparse = open(f'{BASE_DIR}/label4sparse.tmp', 'r')
-            mat = lil_matrix((len(trie), 112065668 + 2), dtype=bool)
-            trie = None
-            print('punim ...')
-            for l in label4sparse:
-                qid, labels = l.strip('\n\r').split('\t')
-                labels = [int(a) for a in labels.split(',') if len(a)>0]
-                qid = int(qid)
-                for label in labels:
-                    mat[label, qid] = True
-            print('snimam ...')
-            save_npz(f'{BASE_DIR}/label4sparse', csr_matrix(mat))
-            mat = None
-            print('gotovo')
+        print('snimam ...')
+        save_npz(f'{DATA_DIR}/labelqid', csr_matrix(mat))
+        print('gotovo')
+        j['lang2id_qid2label'] = lang2id
+        with open(f'{DATA_DIR}/label4sparse.json', 'w') as fo:
+            json.dump(j, fo)
 
         if False:
             QUS = 112_065_668

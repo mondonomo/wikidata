@@ -32,5 +32,10 @@ def qid_lab_get(qid:int, lang:str=None, include_alt:bool=False):
 
 
 if __name__ == '__main__':
-    print(qid_lab_get(42, lang='th', include_alt=True))
-    print(qid_lab_get(6348))
+    #print(qid_lab_get(42, lang='th', include_alt=True))
+    #print(qid_lab_get(6348))
+    print(DATA_DIR)
+    print(trie.restore_key(14016), trie.restore_key(3201431))
+
+    print(qid_lab_get(191701))
+    print(qid_lab_get(177053, include_alt=True))
