@@ -140,16 +140,17 @@ if __name__ == '__main__':
                         l_main[label_id].add(lang)
                     else:
                         l_alt[label_id].add(lang)
+                # overlap alternative labels & main - include all
+                for label, langs in l_alt.items():
+                    if label in l_main:
+                        l_main[label].update(langs)
                 for label, langs in l_alt.items():
                     langs = ';'.join(sorted(langs))
                     if langs not in lang2id:
                         lang2id[langs] = len(lang2id)+1
                     mat[qid, label] = -lang2id[langs]
                 for label, langs in l_main.items():
-                    if mat[qid, label]:
-                        langs = ';'.join(sorted(langs))
-                    else: # overlap alternative labels & main - include all
-                        langs = ';'.join(sorted(set(langs.union(l_alt[label]))))
+                    langs = ';'.join(sorted(langs))
                     #print(qid, label, mat.shape, lang2id[langs], type(qid), type(label))
                     if langs not in lang2id:
                         lang2id[langs] = len(lang2id)+1
@@ -184,16 +185,17 @@ if __name__ == '__main__':
                     l_main[label_id].add(lang)
                 else:
                     l_alt[label_id].add(lang)
+            # overlap alternative labels & main - include all
+            for label, langs in l_alt.items():
+                if label in l_main:
+                    l_main[label].update(langs)
             for label, langs in l_alt.items():
                 langs = ';'.join(sorted(langs))
                 if langs not in lang2id:
                     lang2id[langs] = len(lang2id) + 1
                 mat[label, qid] = -lang2id[langs]
             for label, langs in l_main.items():
-                if mat[label, qid]:
-                    langs = ';'.join(sorted(langs))
-                else:  # overlap alternative labels & main - include all
-                    langs = ';'.join(sorted(set(langs.union(l_alt[label]))))
+                langs = ';'.join(sorted(langs))
                 if langs not in lang2id:
                     lang2id[langs] = len(lang2id) + 1
                 mat[label, qid] = lang2id[langs]
