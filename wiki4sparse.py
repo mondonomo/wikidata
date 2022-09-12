@@ -116,15 +116,14 @@ if __name__ == '__main__':
         #graph4sparse.close()
         label4sparse.close()
         j = {'maxq': max_q}
-        with open(f'{BASE_DIR}/label4sparse.json', 'w') as fo:
+        with open(f'{DATA_DIR}/label4sparse.json', 'w') as fo:
             json.dump(j, fo)
 
-    if True:
-        j = json.load(open(f'{BASE_DIR}/label4sparse.json'))
+    if False:
+        j = json.load(open(f'{DATA_DIR}/label4sparse.json'))
         QUS = int(j['maxq'])
         lang2id = {}  #{k: i+1 for i, k in enumerate(j['langs_comb'])}
         mat = lil_matrix((QUS+1, len(trie)), dtype=np.int32)
-        trie = None
         print('punim ...')
         label4sparse = open(f'{BASE_DIR}/label4sparse.tmp', 'r')
         for l in tqdm(label4sparse, total=QUS):
@@ -140,16 +139,17 @@ if __name__ == '__main__':
                         l_main[label_id].add(lang)
                     else:
                         l_alt[label_id].add(lang)
+                # overlap alternative labels & main - include all
+                for label, langs in l_alt.items():
+                    if label in l_main:
+                        l_main[label].update(langs)
                 for label, langs in l_alt.items():
                     langs = ';'.join(sorted(langs))
                     if langs not in lang2id:
                         lang2id[langs] = len(lang2id)+1
                     mat[qid, label] = -lang2id[langs]
                 for label, langs in l_main.items():
-                    if mat[qid, label]:
-                        langs = ';'.join(sorted(langs))
-                    else: # overlap alternative labels & main - include all
-                        langs = ';'.join(sorted(set(langs.union(l_alt[label]))))
+                    langs = ';'.join(sorted(langs))
                     #print(qid, label, mat.shape, lang2id[langs], type(qid), type(label))
                     if langs not in lang2id:
                         lang2id[langs] = len(lang2id)+1
@@ -166,7 +166,7 @@ if __name__ == '__main__':
         print('gotovo')
 
     if True:
-        j = json.load(open(f'{BASE_DIR}/label4sparse.json'))
+        j = json.load(open(f'{DATA_DIR}/label4sparse.json'))
         QUS = int(j['maxq'])
         lang2id = dict(j['lang2id'])
         label4sparse = open(f'{BASE_DIR}/label4sparse.tmp', 'r')
@@ -174,29 +174,31 @@ if __name__ == '__main__':
         print('punim ...,', mat.shape)
         for l in tqdm(label4sparse, total=QUS):
             qid, labels = l.strip('\n\r').split('\t')
-            qid = int(qid)
-            l_main = defaultdict(set)
-            l_alt = defaultdict(set)
-            for lab in labels.split(','):
-                label_id, lang, tip = lab.split('_')
-                label_id = int(label_id)
-                if tip == 'M':
-                    l_main[label_id].add(lang)
-                else:
-                    l_alt[label_id].add(lang)
-            for label, langs in l_alt.items():
-                langs = ';'.join(sorted(langs))
-                if langs not in lang2id:
-                    lang2id[langs] = len(lang2id) + 1
-                mat[label, qid] = -lang2id[langs]
-            for label, langs in l_main.items():
-                if mat[label, qid]:
+            if labels:
+                qid = int(qid)
+                l_main = defaultdict(set)
+                l_alt = defaultdict(set)
+                for lab in labels.split(','):
+                    label_id, lang, tip = lab.split('_')
+                    label_id = int(label_id)
+                    if tip == 'M':
+                        l_main[label_id].add(lang)
+                    else:
+                        l_alt[label_id].add(lang)
+                # overlap alternative labels & main - include all
+                for label, langs in l_alt.items():
+                    if label in l_main:
+                        l_main[label].update(langs)
+                for label, langs in l_alt.items():
                     langs = ';'.join(sorted(langs))
-                else:  # overlap alternative labels & main - include all
-                    langs = ';'.join(sorted(set(langs.union(l_alt[label]))))
-                if langs not in lang2id:
-                    lang2id[langs] = len(lang2id) + 1
-                mat[label, qid] = lang2id[langs]
+                    if langs not in lang2id:
+                        lang2id[langs] = len(lang2id) + 1
+                    mat[label, qid] = -lang2id[langs]
+                for label, langs in l_main.items():
+                    langs = ';'.join(sorted(langs))
+                    if langs not in lang2id:
+                        lang2id[langs] = len(lang2id) + 1
+                    mat[label, qid] = lang2id[langs]
 
         print('snimam ...')
         save_npz(f'{DATA_DIR}/labelqid', csr_matrix(mat))

@@ -37,5 +37,5 @@ if __name__ == '__main__':
     print(DATA_DIR)
     print(trie.restore_key(14016), trie.restore_key(3201431))
 
-    print(qid_lab_get(191701))
+    print(qid_lab_get(191701, include_alt=True))
     print(qid_lab_get(177053, include_alt=True))
