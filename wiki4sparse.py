@@ -165,7 +165,7 @@ if __name__ == '__main__':
         mat = None
         print('gotovo')
 
-    if True:
+    if False:
         j = json.load(open(f'{DATA_DIR}/label4sparse.json'))
         QUS = int(j['maxq'])
         lang2id = dict(j['lang2id'])
@@ -207,38 +207,39 @@ if __name__ == '__main__':
         with open(f'{DATA_DIR}/label4sparse.json', 'w') as fo:
             json.dump(j, fo)
 
-        if False:
-            QUS = 112_065_668
-            graph4sparse = open(f'{BASE_DIR}/graph4sparse.tmp', 'r')
-            mat = lil_matrix((QUS + 2, QUS + 2), dtype=np.int8)
-            print('punim ...')
-            br = 0
-            for l in tqdm(graph4sparse, total=111_284_985):
-                try:
-                    qid1, qid2, p = l.strip('\n\r').split('\t')
-                    qid1 = int(qid1)
-                    qid2 = int(qid2)
-                    mat[qid1, qid2] = p2i[p]
-                except Exception as e:
-                    print(e, l)
-                br += 1
-                #if br>100_000:
-                #    break
+    if True:
+        j = json.load(open(f'{DATA_DIR}/label4sparse.json'))
+        QUS = int(j['maxq'])
+        graph4sparse = open(f'{BASE_DIR}/graph4sparse.tmp', 'r')
+        mat = lil_matrix((QUS + 2, QUS + 2), dtype=np.int8)
+        print('punim ...')
+        br = 0
+        for l in tqdm(graph4sparse, total=111_284_985):
+            try:
+                qid1, qid2, p = l.strip('\n\r').split('\t')
+                qid1 = int(qid1)
+                qid2 = int(qid2)
+                mat[qid1, qid2] = 100 - p2i[p]
+            except Exception as e:
+                print(e, l)
+            br += 1
+            #if br>100_000:
+            #    break
 
-            for line in tqdm(range(mat.shape[0]), total=mat.shape[0]):
-                x, y = mat[line, :].nonzero()
-                for y1 in y:
-                    P = mat[line, y1]
-                    if P in (1, 2, 3):
-                        father = y1
-                        for i in range(3): # up to three parents
-                            _, y2 = mat[father, :].nonzero()
-                            y2 = {mat[father, i]: i for i in y2}
-                            if P in y2 and not mat[line, y2[P]]:
-                                    mat[line, y2[P]] = P+(i+1)*10
-                            else:
-                                break
+        for line in tqdm(range(mat.shape[0]), total=mat.shape[0]):
+            x, y = mat[line, :].nonzero()
+            for y1 in y:
+                P = mat[line, y1]
+                if P in (1, 2, 3):
+                    father = y1
+                    for i in range(5): # up to 5 parents
+                        _, y2 = mat[father, :].nonzero()
+                        y2 = {mat[father, i]: i for i in y2}
+                        if P in y2 and not mat[line, y2[P]]:
+                                mat[line, y2[P]] = 100-(i+1)*10+P
+                        else:
+                            break
 
-            print('snimam ...')
-            save_npz(f'{BASE_DIR}/graph4sparse', csr_matrix(mat))
+        print('snimam ...')
+        save_npz(f'{DATA_DIR}/graph4sparse', csr_matrix(mat))
 

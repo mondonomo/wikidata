@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
-DATA_DIR = f'{BASE_DIR}/data'
+DATA_DIR = Path.joinpath(BASE_DIR, 'data')
 
 #print('loading')
 trie = marisa_trie.Trie()
@@ -12,6 +12,7 @@ trie.load(f'{DATA_DIR}/labels.trie')
 j = json.load(open(f'{DATA_DIR}/label4sparse.json'))
 id2lang = {v:set(k.split(';')) for k, v in j['lang2id'].items()}
 qid_lab = load_npz(f'{DATA_DIR}/qidlabel.npz')
+lab_qid = load_npz(f'{DATA_DIR}/labelqid.npz')
 #print('loaded')
 
 
@@ -31,11 +32,23 @@ def qid_lab_get(qid:int, lang:str=None, include_alt:bool=False):
     return rec
 
 
+def find_qid(l: str, lang:str=None, include_alt:bool=True):
+    if l in trie:
+        lid = trie[l]
+        _, qs = lab_qid[lid].nonzero()
+        values = lab_qid[lid] if lang else None
+        rec = [a for a in qs if (not lang or id2lang[abs(values[0, a])]) and (include_alt or values[0, a]>0)]
+    else:
+        return []
+    return rec
+
+
 if __name__ == '__main__':
     #print(qid_lab_get(42, lang='th', include_alt=True))
     #print(qid_lab_get(6348))
-    print(DATA_DIR)
-    print(trie.restore_key(14016), trie.restore_key(3201431))
+    #print(DATA_DIR)
+    #print(trie.restore_key(14016), trie.restore_key(3201431))
+    print(find_qid('mba'))
 
     print(qid_lab_get(191701, include_alt=True))
     print(qid_lab_get(177053, include_alt=True))
