@@ -21,8 +21,10 @@ DATA_DIR = f'{Path(__file__).resolve().parent}/data'
 zag = re.compile(' ?\([^\)]*\)')
 resplit = re.compile('/|\n')
 
-PS = ('P31', 'P361', 'P279', 'P460', 'P2354', 'P7084')
-p2i = {k:i+1 for i, k in enumerate(PS)}
+P2i = {'P31': 1, 'P39':5, 'P631':1, 'P106':4, 'P171': 2, 'P279': 1, 'P373':2, 'P010':2, 'P361': 5,  'P460':0, 'P2354':5, 'P7084':2, 'P452':5,
+       'P366':5, 'P737':5, 'P1382': 5, 'P2888': 1, 'P1709': 1, 'P2579': 6}
+
+
 PS_text = ('instance', 'part', 'subclass', 'same_as', 'has wiki list', 'relatd wiki category')
 
 print('loading trie')
@@ -30,17 +32,16 @@ trie = marisa_trie.Trie()
 trie.load(f'{BASE_DIR}/labels.trie')
 print('trie loaded')
 
-
 def extract(line):
     l = line.decode("utf-8").strip(',\r\n ')
     try:
         l = orjson.loads(l)
     except Exception as e:
         print(e)
-        return None, None#, None, None
+        return None, None, None#, None, None
 
     if l['type'] != 'item' or l['id'][0] != 'Q':
-        return None, None
+        return None, None, None
 
 
     labelitems = set()
@@ -63,18 +64,16 @@ def extract(line):
                     labels_lang[ni].add(v2["language"])
 
     graph = []
-    if False:
-        for P in PS:
-            if P in l['claims']:
-                for s in l['claims'][P]:
-                   if 'datavalue' in s['mainsnak']:
-                       if 'id' in s['mainsnak']['datavalue']['value']:
-                           graph.append((P, int(s['mainsnak']['datavalue']['value']['id'][1:])))
-                       else:
-                            pass
+    for P in P2i:
+        if P in l['claims']:
+            for s in l['claims'][P]:
+               if 'datavalue' in s['mainsnak']:
+                   if  s['mainsnak']['datavalue']['type'] == 'wikibase-entityid' and 'id' in s['mainsnak']['datavalue']['value']:
+                       graph.append((P, int(s['mainsnak']['datavalue']['value']['id'][1:])))
+                   else:
+                        pass
 
-    #lang_comb = Counter([';'.join(sorted(l)) for l in labels_lang.values()])
-    return l['id'][1:], labelitems#, lang_comb, graph
+    return l['id'][1:], labelitems, graph
 
 
 if __name__ == '__main__':
@@ -87,7 +86,7 @@ if __name__ == '__main__':
         fin = gzip.open(f'{BASE_DIR}/latest-all.json.gz', 'rb')
         fin.read(2)  # skip first two bytes: "{\n"
         label4sparse = open(f'{BASE_DIR}/label4sparse.tmp', 'w')
-        #graph4sparse = open(f'{BASE_DIR}/graph4sparse.tmp', 'w')
+        graph4sparse = open(f'{BASE_DIR}/graph4sparse.tmp', 'w')
         pbar = tqdm(fin, total=98_364_283)
         while True:
             lines = fin.readlines(BATCH_SIZE)
@@ -97,15 +96,13 @@ if __name__ == '__main__':
             #print(len(list(rec)), len(lines))
             for l in rec:
                 #qid, labels, lang_comb, graph = extract(l)
-                qid, labels = l
+                qid, labels, graph = l
                 if qid:
                     #lang_combs.update(lang_comb)
                     label4sparse.write(f'{qid}\t{",".join(labels)}\n')
-                    #for p, qid2 in graph:
-                    #    graph4sparse.write(f'{qid}\t{qid2}\t{p}\n')
+                    for p, qid2 in graph:
+                        graph4sparse.write(f'{qid}\t{qid2}\t{p}\n')
                     qid = int(qid)
-                    if qid == 6348:
-                        print(qid)
                     #print(max_q, qid)
                     if qid > max_q:
                         max_q = qid
@@ -113,7 +110,7 @@ if __name__ == '__main__':
             if TEST:
                 break
 
-        #graph4sparse.close()
+        graph4sparse.close()
         label4sparse.close()
         j = {'maxq': max_q}
         with open(f'{DATA_DIR}/label4sparse.json', 'w') as fo:
@@ -219,27 +216,27 @@ if __name__ == '__main__':
                 qid1, qid2, p = l.strip('\n\r').split('\t')
                 qid1 = int(qid1)
                 qid2 = int(qid2)
-                mat[qid1, qid2] = 100 - p2i[p]
+                mat[qid1, qid2] = 100 - P2i[p]
             except Exception as e:
                 print(e, l)
             br += 1
             #if br>100_000:
             #    break
 
+        print('closure ...')
         for line in tqdm(range(mat.shape[0]), total=mat.shape[0]):
             x, y = mat[line, :].nonzero()
             for y1 in y:
                 P = mat[line, y1]
-                if P in (1, 2, 3):
-                    father = y1
-                    for i in range(5): # up to 5 parents
-                        _, y2 = mat[father, :].nonzero()
-                        y2 = {mat[father, i]: i for i in y2}
-                        if P in y2 and not mat[line, y2[P]]:
-                                mat[line, y2[P]] = 100-(i+1)*10+P
-                        else:
-                            break
+                father = y1
+                for i in range(5): # up to 5 parents
+                    _, y2 = mat[father, :].nonzero()
+                    y2 = {mat[father, i]: i for i in y2}
+                    if P in y2 and not mat[line, y2[P]]:
+                            mat[line, y2[P]] = 100-(i+1)*20+P
+                    else:
+                        break
 
-        print('snimam ...')
+        print('saving ...')
         save_npz(f'{DATA_DIR}/graph4sparse', csr_matrix(mat))
 
