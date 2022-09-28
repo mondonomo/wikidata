@@ -7,7 +7,7 @@ from datetime import datetime
 # !pip install orjson
 import orjson
 from multiprocessing import Pool
-from scipy.sparse import csr_matrix, save_npz, lil_matrix, load_npz
+from scipy.sparse import csr_matrix, save_npz, lil_matrix, load_npz, identity
 from collections import defaultdict, Counter
 import marisa_trie
 from text_utils import cl
@@ -21,11 +21,13 @@ DATA_DIR = f'{Path(__file__).resolve().parent}/data'
 zag = re.compile(' ?\([^\)]*\)')
 resplit = re.compile('/|\n')
 
-P2i = {'P31': 1, 'P39':5, 'P631':1, 'P106':4, 'P171': 2, 'P279': 1, 'P373':2, 'P010':2, 'P361': 5,  'P460':0, 'P2354':5, 'P7084':2, 'P452':5,
-       'P366':5, 'P737':5, 'P1382': 5, 'P2888': 1, 'P1709': 1, 'P2579': 6}
+P2i = {'P31': 1, 'P279': 1, 'P39':.8, 'P631':0.95, 'P106':.8, 'P171': .9,  'P373':.9, 'P010':.9, 'P361': .8,  'P460':.95, 'P2354':.8, 'P7084':.9, 'P452':.8,
+       'P527': .8, 'P1151': .95, 'P910': .95, 'P1535': 0.9, 'P2283': 0.8, 'P1056': 0.8, 'P3095': 0.8, 'P5125': 0.8,
+       'P6530': 0.8, 'P5973': 0.95, 'P425': 0.9, 'P1269': 0.9, 'P8225': 0.6, 'P277': 0.8,
+       'P101': 0.8, 'P176': 0.7, 'P941': 0.6, 'P408': 0.7, 'P137': 0.8, 'P1552': 0.7, 'P2959': .9,
+       'P805': 0.7,
+       'P366': .8, 'P737': .8, 'P1382': .8, 'P2888': .95, 'P1709': .95, 'P2579': .8}
 
-
-PS_text = ('instance', 'part', 'subclass', 'same_as', 'has wiki list', 'relatd wiki category')
 
 print('loading trie')
 trie = marisa_trie.Trie()
@@ -80,7 +82,7 @@ if __name__ == '__main__':
     pmap = Pool(20)
     TEST = False
     BATCH_SIZE = 1_000_000_000 if not TEST else 10_000_000
-    if False:
+    if True:
         max_q = 0
         #lang_combs = Counter()
         fin = gzip.open(f'{BASE_DIR}/latest-all.json.gz', 'rb')
@@ -208,7 +210,7 @@ if __name__ == '__main__':
         j = json.load(open(f'{DATA_DIR}/label4sparse.json'))
         QUS = int(j['maxq'])
         graph4sparse = open(f'{BASE_DIR}/graph4sparse.tmp', 'r')
-        mat = lil_matrix((QUS + 2, QUS + 2), dtype=np.int8)
+        mat = lil_matrix((QUS + 2, QUS + 2), dtype=float)
         print('punim ...')
         br = 0
         for l in tqdm(graph4sparse, total=111_284_985):
@@ -216,27 +218,25 @@ if __name__ == '__main__':
                 qid1, qid2, p = l.strip('\n\r').split('\t')
                 qid1 = int(qid1)
                 qid2 = int(qid2)
-                mat[qid1, qid2] = 100 - P2i[p]
+                mat[qid1, qid2] = P2i[p] - 0.1 # because of transitive
             except Exception as e:
                 print(e, l)
             br += 1
             #if br>100_000:
             #    break
 
+        print('saving, #non zero', mat.count_nonzero())
+        mat = mat.maximum(identity(mat.shape[0]))
+        mat = mat.maximum(mat.T)
+        mat = csr_matrix(mat, dtype=np.float16)
+        save_npz(f'{DATA_DIR}/graph4sparse_0', mat)
+
         print('closure ...')
-        for line in tqdm(range(mat.shape[0]), total=mat.shape[0]):
-            x, y = mat[line, :].nonzero()
-            for y1 in y:
-                P = mat[line, y1]
-                father = y1
-                for i in range(5): # up to 5 parents
-                    _, y2 = mat[father, :].nonzero()
-                    y2 = {mat[father, i]: i for i in y2}
-                    if P in y2 and not mat[line, y2[P]]:
-                            mat[line, y2[P]] = 100-(i+1)*20+P
-                    else:
-                        break
+        print(i, mat.count_nonzero())
+        m2 = mat.matrix_power(3)
+        m2.data = np.minimum(mat.data / 10., 1)
+        mat = mat.maximum(m2)
 
         print('saving ...')
-        save_npz(f'{DATA_DIR}/graph4sparse', csr_matrix(mat))
+        save_npz(f'{DATA_DIR}/graph4sparse', mat)
 
