@@ -242,13 +242,18 @@ if __name__ == '__main__':
         mat = csr_matrix(mat, dtype=np.float32)
         save_npz(f'{DATA_DIR}/graph4sparse_0', mat)
 
-        pot = 3
         print('closure ...')
         print(mat.count_nonzero())
-        m2 = mat.matrix_power(pot)
+        m2 = mat**2
         m2.data = np.minimum(mat.data / 10., 1)
         mat = mat.maximum(m2)
-
         print('saving ...')
-        save_npz(f'{DATA_DIR}/graph4sparse_{pot}', mat)
+        save_npz(f'{DATA_DIR}/graph4sparse_1', mat)
 
+        print('closure ...')
+        print(mat.count_nonzero())
+        m2 = mat**2
+        m2.data = np.minimum(mat.data / 10., 1)
+        mat = mat.maximum(m2)
+        print('saving ...')
+        save_npz(f'{DATA_DIR}/graph4sparse_2', mat)
