@@ -33,10 +33,10 @@ def extract(line):
         l = json.loads(l)
     except Exception as e:
         print(e)
-        return None, None, None#, None, None
+        return None, None, None, None
 
     if l['type'] != 'item' or l['id'][0] != 'Q':
-        return None, None, None
+        return None, None, None, None
 
 
     labelitems = set()
@@ -58,6 +58,11 @@ def extract(line):
                     labelitems.add(str(ni)+f'_{v2["language"]}_A')
                     labels_lang[ni].add(v2["language"])
 
+    description = ''
+    if 'descriptions' in l:
+        if 'en' in l['descriptions']:
+            description = l['descriptions']['en']['value']
+
     graph = []
     for P in P2i:
         if P in l['claims']:
@@ -68,38 +73,44 @@ def extract(line):
                    else:
                         pass
 
-    return l['id'][1:], labelitems, graph
+    return l['id'][1:], labelitems, graph, description
 
 
 if __name__ == '__main__':
-    trie = None
+
+    print('loading trie')
+    trie = marisa_trie.Trie()
+    trie.load(f'{BASE_DIR}/labels.trie')
+    print('trie loaded')
+
     pmap = Pool(40)
     TEST = False
     BATCH_SIZE = 4_000_000_000 if not TEST else 10_000_000
-    if False:
-        print('loading trie')
-        trie = marisa_trie.Trie()
-        trie.load(f'{BASE_DIR}/labels.trie')
-        print('trie loaded')
+    if True:
+
         max_q = 0
         #lang_combs = Counter()
         fin = gzip.open(f'{BASE_DIR}/latest-all.json.gz', 'rb')
         fin.read(2)  # skip first two bytes: "{\n"
         label4sparse = open(f'{BASE_DIR}/label4sparse.tmp', 'w')
         graph4sparse = open(f'{BASE_DIR}/graph4sparse.tmp', 'w')
+        desc4sparse = open(f'{BASE_DIR}/desc4sparse.tmp', 'w')
         pbar = tqdm(fin, total=98_364_283)
         while True:
             lines = fin.readlines(BATCH_SIZE)
             if len(lines) == 0:
                 break
             rec = pmap.map(extract, lines)
+            #rec = map(extract, lines)
             #print(len(list(rec)), len(lines))
             for l in rec:
                 #qid, labels, lang_comb, graph = extract(l)
-                qid, labels, graph = l
+                qid, labels, graph, desc = l
                 if qid:
                     #lang_combs.update(lang_comb)
                     label4sparse.write(f'{qid}\t{",".join(labels)}\n')
+                    if desc:
+                        desc4sparse.write(f'{qid}\t{desc}\n')
                     for p, qid2 in graph:
                         graph4sparse.write(f'{qid}\t{qid2}\t{p}\n')
                     qid = int(qid)
@@ -112,17 +123,12 @@ if __name__ == '__main__':
 
         graph4sparse.close()
         label4sparse.close()
+        desc4sparse.close()
         j = {'maxq': max_q}
         with open(f'{DATA_DIR}/label4sparse.json', 'w') as fo:
             json.dump(j, fo)
 
     if False:
-        if not trie:
-            print('loading trie')
-            trie = marisa_trie.Trie()
-            trie.load(f'{BASE_DIR}/labels.trie')
-            print('trie loaded')
-
         j = json.load(open(f'{DATA_DIR}/label4sparse.json'))
         QUS = int(j['maxq'])
         lang2id = {}  #{k: i+1 for i, k in enumerate(j['langs_comb'])}
@@ -169,11 +175,6 @@ if __name__ == '__main__':
         print('gotovo')
 
     if False:
-        if not trie:
-            print('loading trie')
-            trie = marisa_trie.Trie()
-            trie.load(f'{BASE_DIR}/labels.trie')
-            print('trie loaded')
         j = json.load(open(f'{DATA_DIR}/label4sparse.json'))
         QUS = int(j['maxq'])
         lang2id = dict(j['lang2id'])
