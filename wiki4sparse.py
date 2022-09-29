@@ -5,7 +5,6 @@ import numpy as np
 import re
 from datetime import datetime
 # !pip install orjson
-import orjson
 from multiprocessing import Pool
 from scipy.sparse import csr_matrix, save_npz, lil_matrix, load_npz, identity
 from collections import defaultdict, Counter
@@ -37,7 +36,7 @@ print('trie loaded')
 def extract(line):
     l = line.decode("utf-8").strip(',\r\n ')
     try:
-        l = orjson.loads(l)
+        l = json.loads(l)
     except Exception as e:
         print(e)
         return None, None, None#, None, None
