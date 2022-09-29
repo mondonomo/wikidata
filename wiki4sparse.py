@@ -22,16 +22,10 @@ resplit = re.compile('/|\n')
 
 P2i = {'P31': 1, 'P279': 1, 'P39':.8, 'P631':0.95, 'P106':.8, 'P171': .9,  'P373':.9, 'P010':.9, 'P361': .8,  'P460':.95, 'P2354':.8, 'P7084':.9, 'P452':.8,
        'P527': .8, 'P1151': .95, 'P910': .95, 'P1535': 0.9, 'P2283': 0.8, 'P1056': 0.8, 'P3095': 0.8, 'P5125': 0.8,
-       'P6530': 0.8, 'P5973': 0.95, 'P425': 0.9, 'P1269': 0.9, 'P8225': 0.6, 'P277': 0.8,
-       'P101': 0.8, 'P176': 0.7, 'P941': 0.6, 'P408': 0.7, 'P137': 0.8, 'P1552': 0.7, 'P2959': .9,
-       'P805': 0.7, 'P2578': 0.8,
+       'P6530': 0.8, 'P5973': 0.95, 'P425': 0.9, 'P1269': 0.9, 'P8225': 0.6, 'P277': 0.8, 'P1552': 0.6, 'P2959': 0.8,
+       'P101': 0.8, 'P408': 0.6, 'P137': 0.6, 'P2578': 0.8, 'P941': 0.6, 'P176': 0.8, 'P805': 0.8,
        'P366': .8, 'P737': .8, 'P1382': .8, 'P2888': .95, 'P1709': .95, 'P2579': .8}
 
-
-print('loading trie')
-trie = marisa_trie.Trie()
-trie.load(f'{BASE_DIR}/labels.trie')
-print('trie loaded')
 
 def extract(line):
     l = line.decode("utf-8").strip(',\r\n ')
@@ -78,10 +72,15 @@ def extract(line):
 
 
 if __name__ == '__main__':
+    trie = None
     pmap = Pool(40)
     TEST = False
-    BATCH_SIZE = 5_000_000_000 if not TEST else 10_000_000
-    if True:
+    BATCH_SIZE = 4_000_000_000 if not TEST else 10_000_000
+    if False:
+        print('loading trie')
+        trie = marisa_trie.Trie()
+        trie.load(f'{BASE_DIR}/labels.trie')
+        print('trie loaded')
         max_q = 0
         #lang_combs = Counter()
         fin = gzip.open(f'{BASE_DIR}/latest-all.json.gz', 'rb')
@@ -118,6 +117,12 @@ if __name__ == '__main__':
             json.dump(j, fo)
 
     if False:
+        if not trie:
+            print('loading trie')
+            trie = marisa_trie.Trie()
+            trie.load(f'{BASE_DIR}/labels.trie')
+            print('trie loaded')
+
         j = json.load(open(f'{DATA_DIR}/label4sparse.json'))
         QUS = int(j['maxq'])
         lang2id = {}  #{k: i+1 for i, k in enumerate(j['langs_comb'])}
@@ -164,6 +169,11 @@ if __name__ == '__main__':
         print('gotovo')
 
     if False:
+        if not trie:
+            print('loading trie')
+            trie = marisa_trie.Trie()
+            trie.load(f'{BASE_DIR}/labels.trie')
+            print('trie loaded')
         j = json.load(open(f'{DATA_DIR}/label4sparse.json'))
         QUS = int(j['maxq'])
         lang2id = dict(j['lang2id'])
@@ -209,7 +219,7 @@ if __name__ == '__main__':
         j = json.load(open(f'{DATA_DIR}/label4sparse.json'))
         QUS = int(j['maxq'])
         graph4sparse = open(f'{BASE_DIR}/graph4sparse.tmp', 'r')
-        mat = lil_matrix((QUS + 2, QUS + 2), dtype=float)
+        mat = lil_matrix((QUS + 2, QUS + 2), dtype=np.float32)
         print('punim ...')
         br = 0
         for l in tqdm(graph4sparse, total=111_284_985):
@@ -220,6 +230,7 @@ if __name__ == '__main__':
                 mat[qid1, qid2] = P2i[p] - 0.1 # because of transitive
             except Exception as e:
                 print(e, l)
+                raise
             br += 1
             #if br>100_000:
             #    break
@@ -227,15 +238,21 @@ if __name__ == '__main__':
         print('saving, #non zero', mat.count_nonzero())
         mat = mat.maximum(identity(mat.shape[0]))
         mat = mat.maximum(mat.T)
-        mat = csr_matrix(mat, dtype=np.float16)
+        mat = csr_matrix(mat, dtype=np.float32)
         save_npz(f'{DATA_DIR}/graph4sparse_0', mat)
 
         print('closure ...')
-        print(i, mat.count_nonzero())
-        m2 = mat.matrix_power(3)
+        print(mat.count_nonzero())
+        m2 = mat**2
         m2.data = np.minimum(mat.data / 10., 1)
         mat = mat.maximum(m2)
-
         print('saving ...')
-        save_npz(f'{DATA_DIR}/graph4sparse', mat)
+        save_npz(f'{DATA_DIR}/graph4sparse_1', mat)
 
+        print('closure ...')
+        print(mat.count_nonzero())
+        m2 = mat**2
+        m2.data = np.minimum(mat.data / 10., 1)
+        mat = mat.maximum(m2)
+        print('saving ...')
+        save_npz(f'{DATA_DIR}/graph4sparse_2', mat)
