@@ -86,7 +86,7 @@ if __name__ == '__main__':
     pmap = Pool(40)
     TEST = False
     BATCH_SIZE = 4_000_000_000 if not TEST else 10_000_000
-    if True:
+    if False:
 
         max_q = 0
         #lang_combs = Counter()
@@ -216,7 +216,7 @@ if __name__ == '__main__':
         with open(f'{DATA_DIR}/label4sparse.json', 'w') as fo:
             json.dump(j, fo)
 
-    if True:
+    if False:
         j = json.load(open(f'{DATA_DIR}/label4sparse.json'))
         QUS = int(j['maxq'])
         graph4sparse = open(f'{BASE_DIR}/graph4sparse.tmp', 'r')
