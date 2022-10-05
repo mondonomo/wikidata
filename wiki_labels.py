@@ -59,6 +59,9 @@ if __name__ == '__main__':
     #print(qid_lab_get(6348))
     #print(DATA_DIR)
     #print(trie.restore_key(14016), trie.restore_key(3201431))
+
+    print(qid_en_desc_get(5))
+
     print(find_qid('mba'))
 
     print(qid_lab_get(191701, include_alt=True))

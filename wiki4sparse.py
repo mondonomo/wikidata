@@ -217,7 +217,7 @@ if __name__ == '__main__':
         with open(f'{DATA_DIR}/label4sparse.json', 'w') as fo:
             json.dump(j, fo)
 
-    if True:
+    if False:
         j = json.load(open(f'{DATA_DIR}/label4sparse.json'))
         QUS = int(j['maxq'])
         graph4sparse = open(f'{BASE_DIR}/graph4sparse.tmp', 'r')
@@ -259,7 +259,7 @@ if __name__ == '__main__':
         print('saving ...')
         save_npz(f'{DATA_DIR}/graph4sparse_2', mat)
 
-    if False:
+    if True:
         j = json.load(open(f'{DATA_DIR}/label4sparse.json'))
         QUS = int(j['maxq'])
         desc4sparse = open(f'{BASE_DIR}/desc4sparse.tmp', 'r')
