@@ -13,6 +13,7 @@ from text_utils import cl
 #from wiki_ent_ids import wikiloc, wikiln, wikifn, wikiorg, wiki_title
 from tqdm import tqdm
 from pathlib import Path
+from scipy.sparse.linalg import expm
 
 BASE_DIR = '/backup/wikidata'
 DATA_DIR = f'{Path(__file__).resolve().parent}/data'
@@ -216,7 +217,7 @@ if __name__ == '__main__':
         with open(f'{DATA_DIR}/label4sparse.json', 'w') as fo:
             json.dump(j, fo)
 
-    if False:
+    if True:
         j = json.load(open(f'{DATA_DIR}/label4sparse.json'))
         QUS = int(j['maxq'])
         graph4sparse = open(f'{BASE_DIR}/graph4sparse.tmp', 'r')
@@ -244,7 +245,7 @@ if __name__ == '__main__':
 
         print('closure ...')
         print(mat.count_nonzero())
-        m2 = mat**2
+        m2 = expm(mat)
         m2.data = np.minimum(mat.data / 10., 1)
         mat = mat.maximum(m2)
         print('saving ...')
@@ -252,8 +253,28 @@ if __name__ == '__main__':
 
         print('closure ...')
         print(mat.count_nonzero())
-        m2 = mat**2
+        m2 = expm(mat)
         m2.data = np.minimum(mat.data / 10., 1)
         mat = mat.maximum(m2)
         print('saving ...')
         save_npz(f'{DATA_DIR}/graph4sparse_2', mat)
+
+    if False:
+        j = json.load(open(f'{DATA_DIR}/label4sparse.json'))
+        QUS = int(j['maxq'])
+        desc4sparse = open(f'{BASE_DIR}/desc4sparse.tmp', 'r')
+        descl = []
+        for l in tqdm(desc4sparse, total=QUS):
+            qid, desc = l.strip('\n\r').split('\t')
+            if desc:
+                descl.append(desc)
+        m = marisa_trie.Trie(tuple(descl))
+        m.save(f'{DATA_DIR}/desc.trie')
+        print('trie saved')
+        descl = np.zeros(QUS, dtype=np.int)
+        for l in tqdm(desc4sparse, total=QUS):
+            qid, desc = l.strip('\n\r').split('\t')
+            if desc:
+                descl[qid] = m[desc]+1
+        np.savez_compressed(f'{DATA_DIR}/desc', descl=descl)
+
