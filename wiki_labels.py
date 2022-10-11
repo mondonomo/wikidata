@@ -1,4 +1,5 @@
 from scipy.sparse import csr_matrix, save_npz, lil_matrix, load_npz
+import numpy as np
 import marisa_trie
 import json
 from pathlib import Path
@@ -14,6 +15,9 @@ id2lang = {v:set(k.split(';')) for k, v in j['lang2id'].items()}
 qid_lab = load_npz(f'{DATA_DIR}/qidlabel.npz')
 lab_qid = load_npz(f'{DATA_DIR}/labelqid.npz')
 #print('loaded')
+tried = marisa_trie.Trie()
+tried.load(f'{DATA_DIR}/desc.trie')
+descl = np.load(f'{DATA_DIR}/desc.npz')['descl']
 
 
 def qid_lab_get(qid:int, lang:str=None, include_alt:bool=False):
@@ -32,6 +36,13 @@ def qid_lab_get(qid:int, lang:str=None, include_alt:bool=False):
     return rec
 
 
+def qid_en_desc_get(qid:int):
+    did = descl[qid]
+    if did > 0:
+        return tried.restore_key(did+-1)
+    else:
+        return ''
+
 def find_qid(l: str, lang:str=None, include_alt:bool=True):
     if l in trie:
         lid = trie[l]
@@ -48,6 +59,9 @@ if __name__ == '__main__':
     #print(qid_lab_get(6348))
     #print(DATA_DIR)
     #print(trie.restore_key(14016), trie.restore_key(3201431))
+
+    print(qid_en_desc_get(5))
+
     print(find_qid('mba'))
 
     print(qid_lab_get(191701, include_alt=True))
