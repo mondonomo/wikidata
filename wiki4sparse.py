@@ -271,10 +271,15 @@ if __name__ == '__main__':
         m = marisa_trie.Trie(tuple(descl))
         m.save(f'{DATA_DIR}/desc.trie')
         print('trie saved')
-        descl = np.zeros(QUS, dtype=np.int)
+        descl = np.zeros(QUS+1  , dtype=np.int)
+        uk = 0
+        desc4sparse = open(f'{BASE_DIR}/desc4sparse.tmp', 'r')
         for l in tqdm(desc4sparse, total=QUS):
             qid, desc = l.strip('\n\r').split('\t')
             if desc:
+                qid = int(qid)
                 descl[qid] = m[desc]+1
+                uk += 1
+        print(uk)
         np.savez_compressed(f'{DATA_DIR}/desc', descl=descl)
 

@@ -39,7 +39,7 @@ def qid_lab_get(qid:int, lang:str=None, include_alt:bool=False):
 def qid_en_desc_get(qid:int):
     did = descl[qid]
     if did > 0:
-        return trie.restore_key(did)
+        return tried.restore_key(did+-1)
     else:
         return ''
 
