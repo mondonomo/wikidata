@@ -22,13 +22,12 @@ descl = np.load(f'{DATA_DIR}/desc.npz')['descl']
 
 def qid_lab_get(qid:int, lang:str=None, include_alt:bool=False):
     try:
-        _, ls = qid_lab[qid].nonzero()
+        ls = qid_lab[qid].indices
+        langs = qid_lab[qid].data
     except:
         return {}
-    values = qid_lab[qid]
     rec = {}
-    for lid in ls:
-        lang_id = values[0, lid]
+    for lid, lang_id in zip(ls, langs):
         if lang_id > 0 or include_alt:
             langs = id2lang[abs(lang_id)]
             if not lang or lang in langs:
@@ -60,9 +59,10 @@ if __name__ == '__main__':
     #print(DATA_DIR)
     #print(trie.restore_key(14016), trie.restore_key(3201431))
 
-    print(qid_en_desc_get(5))
+    #print(qid_en_desc_get(5))
 
-    print(find_qid('mba'))
+    #print(find_qid('mba'))
 
-    print(qid_lab_get(191701, include_alt=True))
+    #print(qid_lab_get(191701, include_alt=True))
     print(qid_lab_get(177053, include_alt=True))
+    print(qid_lab_get(177053, lang='th', include_alt=True))

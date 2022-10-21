@@ -78,16 +78,19 @@ def get_scripts(s:str) -> dict:
 
 
 # return all provenance matching wikidata lang and script
-def get_provenance(text, wiki_lang):
+def get_provenance(text, wiki_lang, no_countries=False):
     if wiki_lang not in wikilang2provenance:
         return []
     scripts = get_scripts(text)
-    provs = []
+    provs = set()
     for prov in wikilang2provenance[wiki_lang]:
         lng, scr, cc = prov.split('_')
         if scr in scripts:
-            provs.append(prov)
-    return provs
+            if no_countries:
+                provs.add(f'{lng}_{scr}_')
+            else:
+                provs.add(prov)
+    return list(provs)
 
 
 if __name__ == '__main__':
