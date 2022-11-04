@@ -87,7 +87,7 @@ if __name__ == '__main__':
     pmap = Pool(40)
     TEST = False
     BATCH_SIZE = 4_000_000_000 if not TEST else 10_000_000
-    if False:
+    if True:
 
         max_q = 0
         #lang_combs = Counter()
@@ -175,7 +175,7 @@ if __name__ == '__main__':
         mat = None
         print('gotovo')
 
-    if False:
+    if True:
         j = json.load(open(f'{DATA_DIR}/label4sparse.json'))
         QUS = int(j['maxq'])
         lang2id = dict(j['lang2id'])
@@ -217,7 +217,7 @@ if __name__ == '__main__':
         with open(f'{DATA_DIR}/label4sparse.json', 'w') as fo:
             json.dump(j, fo)
 
-    if False:
+    if True:
         j = json.load(open(f'{DATA_DIR}/label4sparse.json'))
         QUS = int(j['maxq'])
         graph4sparse = open(f'{BASE_DIR}/graph4sparse.tmp', 'r')
@@ -259,7 +259,7 @@ if __name__ == '__main__':
         print('saving ...')
         save_npz(f'{DATA_DIR}/graph4sparse_2', mat)
 
-    if False:
+    if True:
         j = json.load(open(f'{DATA_DIR}/label4sparse.json'))
         QUS = int(j['maxq'])
         desc4sparse = open(f'{BASE_DIR}/desc4sparse.tmp', 'r')
