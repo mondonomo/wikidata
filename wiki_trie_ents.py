@@ -13,7 +13,7 @@ BASE_DIR = '/backup/wikidata'
 zag = re.compile(' ?\([^\)]*\)')
 resplit = re.compile('/|\n')
 
-ONLY_LABELS = True
+ONLY_LABELS = False
 COMPRESSED = True
 
 fob = open('wikidata_bad.txt', 'w')
@@ -119,26 +119,32 @@ def processw(line, onlyLabels=ONLY_LABELS):
 
 
         if ent_type:
-            if ent_type=='per':
+            if ent_type == 'per':
                 vals = [{'name': 'fn', 'props': ['P735']}, {'name': 'ln', 'props': ['P734', 'P1950']},
                         {'name': 'pat', 'props': ['P5056']},
                         {'name': 'gender', 'props': ['P21']},
                         {'name': 'nick', 'props': ['P1449', 'P742', 'P1787', 'P1813']},
                         {'name': 'title', 'props': ['P39', 'P410', 'P511', 'P97', 'P410', 'P468', 'P512']},
-                        {'name': 'sufix', 'props': ['P1035']}, {'name': 'positions', 'props': ['P39', 'P106', 'P8413']},
+                        {'name': 'sufix', 'props': ['P1035']},
+
+                        {'name': 'positions', 'props': ['P39', 'P106', 'P8413']},
                         {'name': 'country', 'props': ['P27']}, {'name': 'birth_place', 'props': ['P19']},
+                        {'name': 'death_place', 'props': ['P20']}, {'name': 'residence', 'props': ['P551']},
+                        {'name': 'native_language', 'props': ['P103']}, {'name': 'nationality', 'props': ['P27']},
+
                         {'name': 'name_native', 'props': ['P1559']}, {'name': 'name_born', 'props': ['P1477']},
                         {'name': 'dob', 'props': ['P569']},
                         {'name': 'picture', 'props': ['P18']},
                         {'name': 'affiliation', 'props': ['P69', 'P108', 'P937']},
                         ]
-            elif ent_type=='org':
+            elif ent_type == 'org':
                 vals = [{'name': 'country', 'props': ['P17']}, {'name': 'legal_form', 'props': ['P1454']},
                         {'name': 'headquarter', 'props': ['P159']},
                         ]
-            elif ent_type=='loc':
+            elif ent_type == 'loc':
                 vals = [{'name': 'country', 'props': ['P17', 'P159']}, {'name': 'geonames', 'props': ['P1566']},
-                        ]
+                         {'name': 'admin', 'props': ['P131']}, {'name': 'geonameid', 'props': ['P1566']},
+                        {'name': 'population', 'props': ['P1082']}]
             else:
                 raise NotImplemented
             wiki_ent['type'] = ent_type
@@ -205,7 +211,7 @@ if __name__ == '__main__':
         else:
             fin = open(f'{BASE_DIR}/latest-all.json')
             fin.readline() # prvi razmak
-        p = Pool(10)
+        p = Pool(20)
         wikinelma_all = open(f'{BASE_DIR}/wikinelma.jsonl', 'wb')
         wikiname_all = open(f'{BASE_DIR}/wikiname.jsonl', 'wb')
         wikil_all = open(f'{BASE_DIR}/wikil.jsonl', 'wb')
@@ -218,7 +224,7 @@ if __name__ == '__main__':
         print('počinjem ...')
 
         gotovo = False
-        pbar = tqdm(total= 96_709_722)
+        pbar = tqdm(total=99_709_722)
 
         while not gotovo:
             lines = fin.readlines(10_000_000_000)
@@ -256,7 +262,7 @@ if __name__ == '__main__':
         wikil_all.close()
         wiki_loc.close()
 
-    if True:
+    if False:
         WIKI_D = '/backup/wikidata/'
         fi = open(f'{WIKI_D}wikil.jsonl')
         rec = {}
