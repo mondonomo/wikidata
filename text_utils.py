@@ -87,7 +87,7 @@ def get_provenance(text, wiki_lang, no_countries=False):
         lng, scr, cc = prov.split('_')
         if scr in scripts:
             if no_countries:
-                provs.add(f'{lng}_{scr}_')
+                provs.add(f'{lng}_{scr}')
             else:
                 provs.add(prov)
     return list(provs)

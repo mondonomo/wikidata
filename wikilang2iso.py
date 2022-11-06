@@ -1,8 +1,12 @@
 # wiki lang to iso
 import json
 from collections import defaultdict, Counter
+from pathlib import Path
+import os
 
-(wikil2cc, cc2lang, iso2w) = json.load(open('data/wikilang2iso.json', 'r'))
+BASE_DIR = Path(__file__).resolve().parent
+(wikil2cc, cc2lang, iso2w) = json.load(open(os.path.join(BASE_DIR, 'data/wikilang2iso.json')))
+cc2lang['UK'] = cc2lang['GB']
 from wiki_location import q2cc
 
 

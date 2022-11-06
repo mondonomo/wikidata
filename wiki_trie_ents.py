@@ -99,7 +99,9 @@ def processw(line, onlyLabels=ONLY_LABELS):
                 elif 'datavalue' in a['mainsnak'] and a['mainsnak']['datavalue']['value']['id'] in ['Q96477712']:
                     wname = True
         if 'P1566' in l['claims'] or 'P1376' in l['claims'] or 'P281' in l['claims'] or 'P1082' in l['claims']:
-            vals = [{'name': 'country', 'props': ['P17', 'P159']}, {'name':'todayin', 'props': ['P3842']},  {'name': 'admin', 'props': ['P131']}, {'name': 'geonameid', 'props': ['P1566']}, {'name': 'population', 'props': ['P1082']}]
+            vals = [{'name': 'country', 'props': ['P17', 'P159']}, {'name':'todayin', 'props': ['P3842']},
+                    {'name': 'admin', 'props': ['P131']}, {'name': 'geonameid', 'props': ['P1566']},
+                    {'name': 'population', 'props': ['P1082']}]
             wiki_ent['id'] = l['id']
             for v in vals:
                 wiki_ent[v['name']] = []
@@ -128,6 +130,7 @@ def processw(line, onlyLabels=ONLY_LABELS):
                         {'name': 'sufix', 'props': ['P1035']},
 
                         {'name': 'positions', 'props': ['P39', 'P106', 'P8413']},
+                        {'name': 'educated_at', 'props': ['P69']}, {'name': 'works_at', 'props': ['P108']},
                         {'name': 'country', 'props': ['P27']}, {'name': 'birth_place', 'props': ['P19']},
                         {'name': 'death_place', 'props': ['P20']}, {'name': 'residence', 'props': ['P551']},
                         {'name': 'native_language', 'props': ['P103']}, {'name': 'nationality', 'props': ['P27']},
@@ -139,11 +142,11 @@ def processw(line, onlyLabels=ONLY_LABELS):
                         ]
             elif ent_type == 'org':
                 vals = [{'name': 'country', 'props': ['P17']}, {'name': 'legal_form', 'props': ['P1454']},
-                        {'name': 'headquarter', 'props': ['P159']},
+                        {'name': 'headquarter', 'props': ['P159']}, {'name': 'web', 'props': ['P856']},
                         ]
             elif ent_type == 'loc':
                 vals = [{'name': 'country', 'props': ['P17', 'P159']}, {'name': 'geonames', 'props': ['P1566']},
-                         {'name': 'admin', 'props': ['P131']}, {'name': 'geonameid', 'props': ['P1566']},
+                         {'name': 'admin', 'props': ['P131']},
                         {'name': 'population', 'props': ['P1082']}]
             else:
                 raise NotImplemented
@@ -264,6 +267,7 @@ if __name__ == '__main__':
 
     if False:
         WIKI_D = '/backup/wikidata/'
+        WIKI_O = 'data/'
         fi = open(f'{WIKI_D}wikil.jsonl')
         rec = {}
         pbar = tqdm(total=100_123_689)
@@ -282,5 +286,5 @@ if __name__ == '__main__':
         labels = tuple(labels)
         trie = marisa_trie.Trie(labels)
         labels = None
-        trie.save(f'{WIKI_D}labels.trie')
+        trie.save(f'{WIKI_O}labels.trie')
         print('trie saved')

@@ -81,13 +81,13 @@ if __name__ == '__main__':
 
     print('loading trie')
     trie = marisa_trie.Trie()
-    trie.load(f'{BASE_DIR}/labels.trie')
+    trie.load(f'{DATA_DIR}/labels.trie')
     print('trie loaded')
 
     pmap = Pool(40)
     TEST = False
     BATCH_SIZE = 4_000_000_000 if not TEST else 10_000_000
-    if True:
+    if False:
 
         max_q = 0
         #lang_combs = Counter()
@@ -129,7 +129,7 @@ if __name__ == '__main__':
         with open(f'{DATA_DIR}/label4sparse.json', 'w') as fo:
             json.dump(j, fo)
 
-    if True:
+    if False:
         j = json.load(open(f'{DATA_DIR}/label4sparse.json'))
         QUS = int(j['maxq'])
         lang2id = {}  #{k: i+1 for i, k in enumerate(j['langs_comb'])}
@@ -175,7 +175,7 @@ if __name__ == '__main__':
         mat = None
         print('gotovo')
 
-    if True:
+    if False:
         j = json.load(open(f'{DATA_DIR}/label4sparse.json'))
         QUS = int(j['maxq'])
         lang2id = dict(j['lang2id'])
@@ -217,7 +217,7 @@ if __name__ == '__main__':
         with open(f'{DATA_DIR}/label4sparse.json', 'w') as fo:
             json.dump(j, fo)
 
-    if True:
+    if False:
         j = json.load(open(f'{DATA_DIR}/label4sparse.json'))
         QUS = int(j['maxq'])
         graph4sparse = open(f'{BASE_DIR}/graph4sparse.tmp', 'r')
@@ -271,7 +271,7 @@ if __name__ == '__main__':
         m = marisa_trie.Trie(tuple(descl))
         m.save(f'{DATA_DIR}/desc.trie')
         print('trie saved')
-        descl = np.zeros(QUS+1  , dtype=np.int)
+        descl = np.zeros(QUS+1  , dtype=np.int32)
         uk = 0
         desc4sparse = open(f'{BASE_DIR}/desc4sparse.tmp', 'r')
         for l in tqdm(desc4sparse, total=QUS):
