@@ -82,9 +82,9 @@ def processw(line, onlyLabels=ONLY_LABELS):
             for a in l['claims']['P31']:
                 if 'datavalue' in a['mainsnak'] and a['mainsnak']['datavalue']['value']['id'] == 'Q5':  # person
                     ent_type = 'per'
-                elif ('datavalue' in a['mainsnak'] and a['mainsnak']['datavalue']['value']['id'] in wikiloc) or 'P17' in l['claims']:
+                elif ('datavalue' in a['mainsnak'] and a['mainsnak']['datavalue']['value']['id'] in wikiloc) or 'P1566' in l['claims']:
                     ent_type = 'loc'
-                elif 'datavalue' in a['mainsnak'] and a['mainsnak']['datavalue']['value']['id'] in wikiorg:
+                elif 'datavalue' in a['mainsnak'] and a['mainsnak']['datavalue']['value']['id'] in wikiorg or 'P414'in l['claims'] or 'P1128'in l['claims'] :
                     ent_type = 'org'
                 elif 'datavalue' in a['mainsnak'] and a['mainsnak']['datavalue']['value']['id'] in wikifn:  # given name
                     gname = True
