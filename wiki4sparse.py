@@ -6,7 +6,7 @@ import re
 from datetime import datetime
 # !pip install orjson
 from multiprocessing import Pool
-from scipy.sparse import csr_matrix, save_npz, lil_matrix, load_npz, identity
+from scipy.sparse import csr_matrix, csc_matrix, save_npz, lil_matrix, load_npz, identity
 from collections import defaultdict, Counter
 import marisa_trie
 from text_utils import cl
