@@ -27,8 +27,12 @@ for i, l in tqdm(enumerate(open('/backup/wikidata/wikinelma.jsonl')), total=24_9
     qid = int(j['wiki_id'][1:])
     tip = j['type']
     if tip == 'per':
-        cc = get_wiki_cc({'country': j['country'], 'birthplace': j['birth_place'], 'deathplace': j['death_place'],
-                          'language': j['native_language'], 'nationality': j['nationality']} )
+        cc = get_wiki_cc({'country': j['country'], 'workedu': j['works_at']+j['educated_at'], 'birthplace': j['birth_place'], 'deathplace': j['death_place'],
+                          'language': j['native_language'], 'nationality': j['nationality']})
+        if j['gender'] == ['WIKI_Q6581097']:
+            tip = 'per_1'
+        elif j['gender'] == ['WIKI_Q6581072']:
+            tip = 'per_2'
     elif tip == 'loc':
         if j['wiki_id'] in q2cc:
             cc = q2cc[j['wiki_id']]

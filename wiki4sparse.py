@@ -217,49 +217,8 @@ if __name__ == '__main__':
         with open(f'{DATA_DIR}/label4sparse.json', 'w') as fo:
             json.dump(j, fo)
 
+
     if False:
-        j = json.load(open(f'{DATA_DIR}/label4sparse.json'))
-        QUS = int(j['maxq'])
-        graph4sparse = open(f'{BASE_DIR}/graph4sparse.tmp', 'r')
-        mat = lil_matrix((QUS + 2, QUS + 2), dtype=np.float32)
-        print('punim ...')
-        br = 0
-        for l in tqdm(graph4sparse, total=111_284_985):
-            try:
-                qid1, qid2, p = l.strip('\n\r').split('\t')
-                qid1 = int(qid1)
-                qid2 = int(qid2)
-                mat[qid1, qid2] = P2i[p] - 0.1 # because of transitive
-            except Exception as e:
-                print(e, l)
-                raise
-            br += 1
-            #if br>100_000:
-            #    break
-
-        print('saving, #non zero', mat.count_nonzero())
-        mat = mat.maximum(identity(mat.shape[0]))
-        mat = mat.maximum(mat.T)
-        mat = csr_matrix(mat, dtype=np.float32)
-        save_npz(f'{DATA_DIR}/graph4sparse_0', mat)
-
-        print('closure ...')
-        print(mat.count_nonzero())
-        m2 = expm(mat)
-        m2.data = np.minimum(mat.data / 10., 1)
-        mat = mat.maximum(m2)
-        print('saving ...')
-        save_npz(f'{DATA_DIR}/graph4sparse_1', mat)
-
-        print('closure ...')
-        print(mat.count_nonzero())
-        m2 = expm(mat)
-        m2.data = np.minimum(mat.data / 10., 1)
-        mat = mat.maximum(m2)
-        print('saving ...')
-        save_npz(f'{DATA_DIR}/graph4sparse_2', mat)
-
-    if True:
         j = json.load(open(f'{DATA_DIR}/label4sparse.json'))
         QUS = int(j['maxq'])
         desc4sparse = open(f'{BASE_DIR}/desc4sparse.tmp', 'r')
@@ -282,4 +241,40 @@ if __name__ == '__main__':
                 uk += 1
         print(uk)
         np.savez_compressed(f'{DATA_DIR}/desc', descl=descl)
+
+
+    if True:
+        j = json.load(open(f'{DATA_DIR}/label4sparse.json'))
+        QUS = int(j['maxq'])
+        graph4sparse = open(f'{BASE_DIR}/graph4sparse.tmp', 'r')
+        mat = lil_matrix((QUS + 2, QUS + 2), dtype=np.float32)
+        print('punim ...')
+        br = 0
+        for l in tqdm(graph4sparse, total=111_284_985):
+            try:
+                qid1, qid2, p = l.strip('\n\r').split('\t')
+                qid1 = int(qid1)
+                qid2 = int(qid2)
+                mat[qid1, qid2] = P2i[p] - 0.1 # because of transitive
+            except Exception as e:
+                print(e, l)
+                raise
+            br += 1
+            #if br>100_000:
+            #    break
+
+        print('saving, #non zero', mat.count_nonzero())
+        mat = mat.maximum(identity(mat.shape[0]))
+        mat = mat.maximum(mat.T)
+        save_npz(f'{DATA_DIR}/graph4sparse_0', csr_matrix(mat, dtype=np.float32))
+        mat = csc_matrix(mat, dtype=np.float32)
+
+        print('closure 1 ...')
+        print(mat.count_nonzero())
+        m2 = expm(mat)
+        print('norm ...')
+        m2.data = np.minimum(mat.data / 10., 1)
+        mat = mat.maximum(m2)
+        print('saving ...')
+        save_npz(f'{DATA_DIR}/graph4sparse_1', csr_matrix(mat, dtype=np.float32))
 

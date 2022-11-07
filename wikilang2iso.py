@@ -76,7 +76,7 @@ def get_gid(w):
 
 
 weights = {'birthplace': 1, 'deathplace': 1, 'headquater':2, 'country': 2, 'nationality': 2, 'language': 1,
-           'headquarter':3, }
+           'headquarter':3, 'workedu': 1}
 
 
 def get_wiki_cc(args):
