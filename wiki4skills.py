@@ -58,7 +58,7 @@ def processw(line):
         else:
             print('BAD', l)
         return None
-    wiki_ent = {'wiki_id': l['id']}
+    wiki_ent = {}
     t = None
     ent_type = set()
     if 'claims' in l:
@@ -100,9 +100,12 @@ def processw(line):
                                 wiki_ent[v['name']].append(s['mainsnak']['datavalue']['value']['time'][1:11])
                         else:
                             pass
-
-    return wiki_ent
-
+    if len(wiki_ent)>0:
+        wiki_ent['wiki_id'] = l['id']
+        wiki_ent['type'] = str(ent_type)
+        return wiki_ent
+    else:
+        return None
 
 if __name__ == '__main__':
 
