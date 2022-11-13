@@ -12,23 +12,22 @@ from text_utils import get_provenance
 from api.db import db
 from tqdm import tqdm
 import random
-
+from json import loads
+from multiprocessing import Pool
 print(get_wiki_cc({'country': ['Q161885','Q30'], 'birthplace': ['Q494413', 'Q216638'],
                    'deathplace': ['Q731635']} ),
         qid_lab_get(42, 'en').keys(), parse('davor lauc')['tags'][0])
 
-fo = open('/projekti/mondodb_lm/wiki_train.tsv', 'w')
-fot = open('/projekti/mondodb_lm/wiki_test.tsv', 'w')
-fod = open('/projekti/mondodb_lm/wiki_dev.tsv', 'w')
-#fo.write('qid\tname\tfn\tln\tdesc\tplace\tdob\timage\tsort\n')
-uk = 0
-for i, l in tqdm(enumerate(open('/backup/wikidata/wikinelma.jsonl')), total=24_969_448):
-    j = json.loads(l)
+
+def proc(l):
+    j = loads(l)
     qid = int(j['wiki_id'][1:])
     tip = j['type']
     if tip == 'per':
-        cc = get_wiki_cc({'country': j['country'], 'workedu': j['works_at']+j['educated_at'], 'birthplace': j['birth_place'], 'deathplace': j['death_place'],
-                          'language': j['native_language'], 'nationality': j['nationality']})
+        cc = get_wiki_cc(
+            {'country': j['country'], 'workedu': j['works_at'] + j['educated_at'], 'birthplace': j['birth_place'],
+             'deathplace': j['death_place'],
+             'language': j['native_language'], 'nationality': j['nationality']})
         if j['gender'] == ['WIKI_Q6581097']:
             tip = 'per_1'
         elif j['gender'] == ['WIKI_Q6581072']:
@@ -37,9 +36,9 @@ for i, l in tqdm(enumerate(open('/backup/wikidata/wikinelma.jsonl')), total=24_9
         if j['wiki_id'] in q2cc:
             cc = q2cc[j['wiki_id']]
         else:
-            cc = get_wiki_cc({'country': j['country'], 'headquarter': j['admin']} )
+            cc = get_wiki_cc({'country': j['country'], 'headquarter': j['admin']})
     elif tip == 'org':
-        cc = get_wiki_cc({'country': j['country'], 'headquarter': j['headquarter']} )
+        cc = get_wiki_cc({'country': j['country'], 'headquarter': j['headquarter']})
     else:
         raise NotImplementedError
 
@@ -58,17 +57,40 @@ for i, l in tqdm(enumerate(open('/backup/wikidata/wikinelma.jsonl')), total=24_9
         for l in qid_lab_get(qid, lang, True):
             if l not in rows:
                 rows[l] = lang
+    rec = []
     for l, lang in rows.items():
         prov = get_provenance(l, lang, no_countries=True)
-        if prov and l and len(l) > 1:
-            tow = f'{l}\t{tip} {prov[0]}\n'
-            r = random.random()
-            if r < .01:
-                fot.write(tow)
-            elif r < .02:
-                fod.write(tow)
-            else:
-                fo.write(tow)
-fo.close()
-fod.close()
-fot.close()
+        if prov and l and len(l) > 1 and prov[0] and tip:
+            rec.append(f'{l}\t{tip} {prov[0]}\n')
+    return rec
+
+
+if __name__ == '__main__':
+
+    fo = open('/projekti/mondodb_lm/wiki_train.tsv', 'w')
+    fot = open('/projekti/mondodb_lm/wiki_test.tsv', 'w')
+    fod = open('/projekti/mondodb_lm/wiki_dev.tsv', 'w')
+    #fo.write('qid\tname\tfn\tln\tdesc\tplace\tdob\timage\tsort\n')
+    uk = 0
+
+    p = Pool(10)
+
+    batch = []
+    lines = open('/backup/wikidata/wikinelma.jsonl').readlines()
+    for i, l in tqdm(enumerate(lines), total=len(lines)):
+        batch.append(l)
+        if len(batch) > 1024 or i+1 == len(lines):
+            recs = p.map(proc, batch)
+            batch = []
+            for rec in recs:
+                for tow in rec:
+                    r = random.random()
+                    if r < .01:
+                        fot.write(tow)
+                    elif r < .02:
+                        fod.write(tow)
+                    else:
+                        fo.write(tow)
+    fo.close()
+    fod.close()
+    fot.close()
