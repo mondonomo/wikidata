@@ -60,7 +60,7 @@ for i, l in tqdm(enumerate(open('/backup/wikidata/wikinelma.jsonl')), total=24_9
                 rows[l] = lang
     for l, lang in rows.items():
         prov = get_provenance(l, lang, no_countries=True)
-        if prov:
+        if prov and l and len(l) > 1:
             tow = f'{l}\t{tip} {prov[0]}\n'
             r = random.random()
             if r < .01:
