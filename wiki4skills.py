@@ -58,7 +58,7 @@ def processw(line):
         else:
             print('BAD', l)
         return None
-    wiki_ent = {'wiki_id': l['id']}
+    wiki_ent = {}
     t = None
     ent_type = set()
     if 'claims' in l:
@@ -68,10 +68,11 @@ def processw(line):
                     if 'datavalue' in a['mainsnak']:
                         key = (P, a['mainsnak']['datavalue']['value']['id'])
                         if key in types:
-                            ent_type.update(types[key])
+                            ent_type.add(key[1])
 
     if len(ent_type) > 0:
-        vals = [{'name': 'fields', 'props': ['P425']},
+        vals = [
+                {'name': 'fields', 'props': ['P425']},
                 {'name': 'studies', 'props': ['P2578']},
                 {'name': 'acm_code', 'props': ['P2179']},
                 {'name': 'product', 'props': ['P1056']},
@@ -83,7 +84,7 @@ def processw(line):
                 {'name': 'babelnet_id', 'props': ['P2581']},
                 {'name': 'openalex_id', 'props': ['P10283']},
                 {'name': 'wordnet_id', 'props': ['P8814']}]
-
+        wiki_ent['wiki_id'] = l['id']
         for v in vals:
             wiki_ent[v['name']] = []
             for pid in v['props']:
