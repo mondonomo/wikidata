@@ -122,7 +122,7 @@ if __name__ == '__main__':
     pbar = tqdm(total=100_709_722)
     br, brr = 0, 0
 
-    p = Pool(10)
+    p = Pool(20)
 
     while not gotovo:
         lines = fin.readlines(10_000_000_000)
@@ -139,5 +139,6 @@ if __name__ == '__main__':
         r = [a for a in p.map(processw, lines) if a]
         for oc in r:
             occup.write(orjson.dumps(oc, option=orjson.OPT_APPEND_NEWLINE))
+        occup.flush()
         pbar.update(len(lines))
     occup.close()
