@@ -81,6 +81,7 @@ def processw(line):
                 {'name': 'esco_occupation_id', 'props': ['P4652']},
                 {'name': 'esco_skill_id', 'props': ['P4644']},
                 {'name': 'soc_code', 'props': ['P919']},
+                {'name': 'SFBI_code', 'props': ['P1024']},
                 {'name': 'babelnet_id', 'props': ['P2581']},
                 {'name': 'openalex_id', 'props': ['P10283']},
                 {'name': 'wordnet_id', 'props': ['P8814']}]
