@@ -6,7 +6,9 @@ BASE_DIR = '/backup/wikidata'
 from data.wiki_types import wikiloc
 
 vals = [{'name': 'country', 'props': ['P17', 'P159']}, {'name': 'admin', 'props': ['P131']},
-        {'name': 'geonameid', 'props': ['P1566']}, {'name': 'population', 'props': ['P1082']}]
+        {'name': 'geonameid', 'props': ['P1566']}, {'name': 'population', 'props': ['P1082']},
+        {'name': 'dissolution', 'props': ['P576']},
+        ]
 
 
 def extract(line):
@@ -19,7 +21,7 @@ def extract(line):
     if l['type'] != 'item' or l['id'][0] != 'Q' or 'claims' not in l:
         return None
     wiki_ent = None
-    if l['id'] in wikiloc or  'P131' in l['claims'] or 'P1566' in l['claims'] or 'P1082' in l['claims']:
+    if l['id'] in wikiloc or 'P131' in l['claims'] or 'P1566' in l['claims'] or 'P1082' in l['claims']:
         wiki_ent = {'id': l['id'] }
         for v in vals:
             wiki_ent[v['name']] = []
