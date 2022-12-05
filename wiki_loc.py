@@ -35,6 +35,9 @@ def extract(line):
                                 wiki_ent[v['name']].append(s['mainsnak']['datavalue']['value'])
                             elif s['mainsnak']['datavalue']['type'] in ['wikibase-entityid']:
                                 wiki_ent[v['name']].append(s['mainsnak']['datavalue']['value']['id'])
+                            elif s['mainsnak']['datavalue']['type'] == 'quantity':
+                                wiki_ent[v['name']].append(s['mainsnak']['datavalue']['value']['amount'])
+
 
     return json.dumps(wiki_ent) if wiki_ent else None
 
