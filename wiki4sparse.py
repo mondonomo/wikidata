@@ -103,7 +103,7 @@ if __name__ == '__main__':
             if not TEST:
                 rec = pmap.map(extract, lines)
             else:
-                rec = pmap.map(extract, lines)
+                rec = map(extract, lines)
             #rec = map(extract, lines)
             #print(len(list(rec)), len(lines))
             for l in rec:
