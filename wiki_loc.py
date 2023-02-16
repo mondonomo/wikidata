@@ -38,9 +38,7 @@ def extract(line):
                             elif s['mainsnak']['datavalue']['type'] == 'quantity':
                                 wiki_ent[v['name']].append(s['mainsnak']['datavalue']['value']['amount'])
 
-
     return json.dumps(wiki_ent) if wiki_ent else None
-
 
 
 if __name__ == '__main__':

@@ -85,10 +85,9 @@ if __name__ == '__main__':
     print('trie loaded')
 
     pmap = Pool(40)
-    TEST = False
-    BATCH_SIZE = 4_000_000_000 if not TEST else 10_000_000
-    if False:
-
+    TEST = True
+    BATCH_SIZE = 4_000_000_000 if not TEST else 100
+    if True:
         max_q = 0
         #lang_combs = Counter()
         fin = gzip.open(f'{BASE_DIR}/latest-all.json.gz', 'rb')
@@ -101,7 +100,10 @@ if __name__ == '__main__':
             lines = fin.readlines(BATCH_SIZE)
             if len(lines) == 0:
                 break
-            rec = pmap.map(extract, lines)
+            if not TEST:
+                rec = pmap.map(extract, lines)
+            else:
+                rec = pmap.map(extract, lines)
             #rec = map(extract, lines)
             #print(len(list(rec)), len(lines))
             for l in rec:
@@ -243,7 +245,7 @@ if __name__ == '__main__':
         np.savez_compressed(f'{DATA_DIR}/desc', descl=descl)
 
 
-    if True:
+    if False:
         j = json.load(open(f'{DATA_DIR}/label4sparse.json'))
         QUS = int(j['maxq'])
         graph4sparse = open(f'{BASE_DIR}/graph4sparse.tmp', 'r')
