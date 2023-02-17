@@ -14,6 +14,10 @@ from text_utils import cl
 from tqdm import tqdm
 from pathlib import Path
 from scipy.sparse.linalg import expm
+import sys
+sys.path.insert(0, '/projekti/mondoAPI')
+from pnu.text_utils import norm_pname
+from pnu.detect_lang_scr import get_provenance, get_scripts
 
 BASE_DIR = '/backup/wikidata'
 DATA_DIR = f'{Path(__file__).resolve().parent}/data'
@@ -47,8 +51,15 @@ def extract(line):
             nl = cl(v['value']).lower()
             if nl:
                 ni = trie[nl]
-                labelitems.add(str(ni)+f'_{v["language"]}_M')
-                labels_lang[ni].add(v["language"])
+                scr = get_scripts(nl, True)[0][0]
+                if v["language"].count('-') == 1 and len(v["language"].split('-')[-1])==2:
+                    lang, cc = v["language"].split('-')
+                    cc = '_'+cc.upper()
+                else:
+                    lang, cc = v["language"], ''
+                lang = f'{lang}_{scr}{cc}'
+                labelitems.add(f'{str(ni)}#{lang}#M')
+                labels_lang[ni].add(lang)
 
     if 'aliases' in l:
         for k, v in dict(l['aliases']).items():
@@ -56,8 +67,15 @@ def extract(line):
                 nl = cl(v2['value']).lower()
                 if nl:
                     ni = trie[nl]
-                    labelitems.add(str(ni)+f'_{v2["language"]}_A')
-                    labels_lang[ni].add(v2["language"])
+                    scr = get_scripts(nl, True)[0][0]
+                    if v2["language"].count('-') == 1 and len(v2["language"].split('-')[-1]) == 2:
+                        lang, cc = v2["language"].split('-')
+                        cc = '_' + cc.upper()
+                    else:
+                        lang, cc = v2["language"], ''
+                    lang = f'{lang}_{scr}{cc}'
+                    labelitems.add(f'{str(ni)}#{lang}#A')
+                    labels_lang[ni].add(lang)
 
     description = ''
     if 'descriptions' in l:
@@ -84,9 +102,9 @@ if __name__ == '__main__':
     trie.load(f'{DATA_DIR}/labels.trie')
     print('trie loaded')
 
-    pmap = Pool(40)
-    TEST = True
-    BATCH_SIZE = 4_000_000_000 if not TEST else 100
+    pmap = Pool(30)
+    TEST = False
+    BATCH_SIZE = 4_000_000_000
     if True:
         max_q = 0
         #lang_combs = Counter()
@@ -131,7 +149,7 @@ if __name__ == '__main__':
         with open(f'{DATA_DIR}/label4sparse.json', 'w') as fo:
             json.dump(j, fo)
 
-    if False:
+    if True:
         j = json.load(open(f'{DATA_DIR}/label4sparse.json'))
         QUS = int(j['maxq'])
         lang2id = {}  #{k: i+1 for i, k in enumerate(j['langs_comb'])}
@@ -145,7 +163,7 @@ if __name__ == '__main__':
                 l_main = defaultdict(set)
                 l_alt = defaultdict(set)
                 for lab in labels.split(','):
-                    label_id, lang, tip = lab.split('_')
+                    label_id, lang, tip = lab.split('#')
                     label_id = int(label_id)
                     if tip == 'M':
                         l_main[label_id].add(lang)
@@ -177,7 +195,7 @@ if __name__ == '__main__':
         mat = None
         print('gotovo')
 
-    if False:
+    if True:
         j = json.load(open(f'{DATA_DIR}/label4sparse.json'))
         QUS = int(j['maxq'])
         lang2id = dict(j['lang2id'])
@@ -191,7 +209,7 @@ if __name__ == '__main__':
                 l_main = defaultdict(set)
                 l_alt = defaultdict(set)
                 for lab in labels.split(','):
-                    label_id, lang, tip = lab.split('_')
+                    label_id, lang, tip = lab.split('#')
                     label_id = int(label_id)
                     if tip == 'M':
                         l_main[label_id].add(lang)

@@ -20,7 +20,7 @@ tried.load(f'{DATA_DIR}/desc.trie')
 descl = np.load(f'{DATA_DIR}/desc.npz')['descl']
 
 
-def qid_lab_get(qid:int, lang:str=None, include_alt:bool=False, return_alt:bool=False):
+def qid_lab_get(qid:int, filter_lang:str=None, include_alt:bool=False, return_alt:bool=False):
     try:
         ls = qid_lab[qid].indices
         langs = qid_lab[qid].data
@@ -31,12 +31,13 @@ def qid_lab_get(qid:int, lang:str=None, include_alt:bool=False, return_alt:bool=
         if not return_alt:
             if langs_id > 0 or include_alt:
                 langs = id2lang[abs(langs_id)]
-                if not lang or lang in langs:
+                if not filter_lang or filter_lang in langs:
                     rec[trie.restore_key(lid)] = langs
         else:
+            l = trie.restore_key(lid)
+            rec[l] = set()
             for lang_id in id2lang[abs(langs_id)]:
-                for lang in langs:
-                    rec[trie.restore_key(lid)] = (lang_id, langs_id > 0)
+                 rec[l].add((lang_id, langs_id > 0))
     return rec
 
 
