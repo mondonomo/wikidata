@@ -51,31 +51,37 @@ def extract(line):
             nl = cl(v['value']).lower()
             if nl:
                 ni = trie[nl]
-                scr = get_scripts(nl, True)[0][0]
-                if v["language"].count('-') == 1 and len(v["language"].split('-')[-1])==2:
-                    lang, cc = v["language"].split('-')
-                    cc = '_'+cc.upper()
-                else:
-                    lang, cc = v["language"], ''
-                lang = f'{lang}_{scr}{cc}'
-                labelitems.add(f'{str(ni)}#{lang}#M')
-                labels_lang[ni].add(lang)
+                try:
+                    scr = get_scripts(nl, True)[0][0]
+                    if v["language"].count('-') == 1 and len(v["language"].split('-')[-1])==2:
+                        lang, cc = v["language"].split('-')
+                        cc = '_'+cc.upper()
+                    else:
+                        lang, cc = v["language"], ''
+                    lang = f'{lang}_{scr}{cc}'
+                    labelitems.add(f'{str(ni)}#{lang}#M')
+                    labels_lang[ni].add(lang)
+                except Exception as e:
+                    print(e)
 
     if 'aliases' in l:
         for k, v in dict(l['aliases']).items():
             for v2 in v:
                 nl = cl(v2['value']).lower()
                 if nl:
-                    ni = trie[nl]
-                    scr = get_scripts(nl, True)[0][0]
-                    if v2["language"].count('-') == 1 and len(v2["language"].split('-')[-1]) == 2:
-                        lang, cc = v2["language"].split('-')
-                        cc = '_' + cc.upper()
-                    else:
-                        lang, cc = v2["language"], ''
-                    lang = f'{lang}_{scr}{cc}'
-                    labelitems.add(f'{str(ni)}#{lang}#A')
-                    labels_lang[ni].add(lang)
+                    try:
+                        ni = trie[nl]
+                        scr = get_scripts(nl, True)[0][0]
+                        if v2["language"].count('-') == 1 and len(v2["language"].split('-')[-1]) == 2:
+                            lang, cc = v2["language"].split('-')
+                            cc = '_' + cc.upper()
+                        else:
+                            lang, cc = v2["language"], ''
+                        lang = f'{lang}_{scr}{cc}'
+                        labelitems.add(f'{str(ni)}#{lang}#A')
+                        labels_lang[ni].add(lang)
+                    except Exception as e:
+                        print(e)
 
     description = ''
     if 'descriptions' in l:
