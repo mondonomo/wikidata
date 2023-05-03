@@ -24,8 +24,11 @@ vals = [{'name': 'fn', 'props': ['P735']}, {'name': 'ln', 'props': ['P734', 'P19
         {'name': 'nick', 'props': ['P1449', 'P742', 'P1787']},
         {'name': 'title', 'props': ['P39', 'P410', 'P511', 'P97', 'P410', 'P468', 'P512']},
         {'name': 'sufix', 'props': ['P1035']}, {'name': 'positions', 'props': ['P39', 'P106', 'P8413']},
-        {'name': 'country', 'props': ['P27']}, {'name': 'birth_place', 'props': ['P19']},
-        {'name': 'language', 'props': ['P1412']},
+        {'name': 'country residence', 'props': ['P27', 'P551']}, {'name': 'birth_place', 'props': ['P19']},
+{'name': 'place of death burial', 'props': ['P20', 'P119']}, {'name': 'educated at', 'props': ['P69']},
+{'name': 'work location', 'props': ['P937']}, {'name': 'employer', 'props': ['P108']},
+
+        {'name': 'language', 'props': ['P103','P1412']},
         {'name': 'name_native', 'props': ['P1559']}, {'name': 'name_born', 'props': ['P1477']},
         {'name': 'dob', 'props': ['P569']},
         {'name': 'picture', 'props': ['P18']},

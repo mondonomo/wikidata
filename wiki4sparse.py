@@ -244,7 +244,7 @@ if __name__ == '__main__':
             json.dump(j, fo)
 
 
-    if False:
+    if True:
         j = json.load(open(f'{DATA_DIR}/label4sparse.json'))
         QUS = int(j['maxq'])
         desc4sparse = open(f'{BASE_DIR}/desc4sparse.tmp', 'r')
@@ -269,7 +269,7 @@ if __name__ == '__main__':
         np.savez_compressed(f'{DATA_DIR}/desc', descl=descl)
 
 
-    if False:
+    if True:
         j = json.load(open(f'{DATA_DIR}/label4sparse.json'))
         QUS = int(j['maxq'])
         graph4sparse = open(f'{BASE_DIR}/graph4sparse.tmp', 'r')
