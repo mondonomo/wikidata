@@ -102,7 +102,7 @@ def processw(line, onlyLabels=ONLY_LABELS):
                                     wiki_ent[v['name']].append(s['mainsnak']['datavalue']['value']['time'][1:11])
                             else:
                                 pass
-
+            wiki_ent['sitelinks'] = list(l['sitelinks'])
     return wiki_ent
 
 
