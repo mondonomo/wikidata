@@ -5,7 +5,7 @@ from pathlib import Path
 import os
 
 BASE_DIR = Path(__file__).resolve().parent
-(wikil2cc, cc2lang, iso2w) = json.load(open(os.path.join(BASE_DIR, 'data/wikilang2iso.json')))
+(wikil2cc, cc2lang, iso2w, w2iso) = json.load(open(os.path.join(BASE_DIR, 'data/wikilang2iso.json')))
 cc2lang['UK'] = cc2lang['GB']
 from wiki_location import q2cc
 
@@ -60,7 +60,9 @@ def load_from_airtable():
                }
     iso2w = {k : v for v, k in w2iso.items()}
 
-    json.dump((wikil2cc, cc2lang, iso2w), open('data/wikilang2iso.json', 'w'))
+    w2iso = {t['fields']['WMF']: t['fields']['iso3'] if 'iso' in t['fields'] else None for t in
+             Table(api_key, 'appUZvAm9EHZgC1Eg', 'wiki_lang').all()}
+    json.dump((wikil2cc, cc2lang, iso2w, w2iso), open('data/wikilang2iso.json', 'w'))
     print(wikil2cc['Q1860']['US'], cc2lang['CH'])
 
 
@@ -104,7 +106,7 @@ def get_wiki_cc(args):
 if __name__ == '__main__':
     if False:
         load_from_airtable()
-    (wikil2cc, cc2lang, iso2w) = json.load(open('data/wikilang2iso.json', 'r'))
+    (wikil2cc, cc2lang, iso2w, w2iso) = json.load(open('data/wikilang2iso.json', 'r'))
     print(wikil2cc['Q1860']['US'], cc2lang['CH'])
     print(get_wiki_cc({'country': ['Q161885','Q30'], 'birthplace': ['Q494413', 'Q216638'],
                        'deathplace': ['Q731635']} ))
