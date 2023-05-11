@@ -60,7 +60,7 @@ def load_from_airtable():
                }
     iso2w = {k : v for v, k in w2iso.items()}
 
-    w2iso = {t['fields']['WMF']: t['fields']['iso3'] if 'iso' in t['fields'] else None for t in
+    w2iso = {t['fields']['WMF']: t['fields']['iso3'] if 'iso3' in t['fields'] else None for t in
              Table(api_key, 'appUZvAm9EHZgC1Eg', 'wiki_lang').all()}
     json.dump((wikil2cc, cc2lang, iso2w, w2iso), open('data/wikilang2iso.json', 'w'))
     print(wikil2cc['Q1860']['US'], cc2lang['CH'])
@@ -104,9 +104,9 @@ def get_wiki_cc(args):
 
 
 if __name__ == '__main__':
-    if False:
+    if True:
         load_from_airtable()
     (wikil2cc, cc2lang, iso2w, w2iso) = json.load(open('data/wikilang2iso.json', 'r'))
-    print(wikil2cc['Q1860']['US'], cc2lang['CH'])
+    print(wikil2cc['Q1860']['US'], cc2lang['CH'], w2iso['hr'])
     print(get_wiki_cc({'country': ['Q161885','Q30'], 'birthplace': ['Q494413', 'Q216638'],
                        'deathplace': ['Q731635']} ))
