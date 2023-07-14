@@ -12,6 +12,7 @@ if __name__ == '__main__':
     rec = {}
     pbar = tqdm(total=98_123_689)
     labels = set()
+    uk = 0
     while True:
         tmp = fi.readlines(150_000_000)
         if len(tmp) == 0:
@@ -20,6 +21,7 @@ if __name__ == '__main__':
             j = orjson.loads(line)
             labels.update([a.lower().strip() for a in j if a != 'wiki_id'])
         pbar.update(len(tmp))
+        uk += len(tmp)
     pbar.close()
     print('snimam')
     #pickle.dump(labels, open(f'{WIKI_D}wikilabes4trie.pickle', 'wb'))
@@ -27,4 +29,4 @@ if __name__ == '__main__':
     trie = marisa_trie.Trie(labels)
     labels = None
     trie.save(f'{WIKI_D}labels.trie')
-    print('trie saved')
+    print('trie saved', uk)
