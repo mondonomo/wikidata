@@ -82,9 +82,9 @@ def processw(line, onlyLabels=ONLY_LABELS):
             for a in l['claims']['P31']:
                 if 'datavalue' in a['mainsnak'] and a['mainsnak']['datavalue']['value']['id'] == 'Q5':  # person
                     ent_type = 'per'
-                elif ('datavalue' in a['mainsnak'] and a['mainsnak']['datavalue']['value']['id'] in wikiloc) or 'P1566' in l['claims']:
+                elif 'datavalue' in a['mainsnak'] and (a['mainsnak']['datavalue']['value']['id'] in wikiloc or 'P131' in l['claims'] or 'P1566' in l['claims'] or 'P1082' in l['claims']):
                     ent_type = 'loc'
-                elif 'datavalue' in a['mainsnak'] and a['mainsnak']['datavalue']['value']['id'] in wikiorg or 'P414'in l['claims'] or 'P1128'in l['claims'] :
+                elif 'datavalue' in a['mainsnak'] and (a['mainsnak']['datavalue']['value']['id'] in wikiorg or 'P414'in l['claims'] or 'P1128'in l['claims']):
                     ent_type = 'org'
                 elif 'datavalue' in a['mainsnak'] and a['mainsnak']['datavalue']['value']['id'] in wikifn:  # given name
                     gname = True
@@ -98,27 +98,6 @@ def processw(line, onlyLabels=ONLY_LABELS):
                     wikil = True
                 elif 'datavalue' in a['mainsnak'] and a['mainsnak']['datavalue']['value']['id'] in ['Q96477712']:
                     wname = True
-        if 'P1566' in l['claims'] or 'P1376' in l['claims'] or 'P281' in l['claims'] or 'P1082' in l['claims']:
-            vals = [{'name': 'country', 'props': ['P17', 'P159']}, {'name':'todayin', 'props': ['P3842']},
-                    {'name': 'admin', 'props': ['P131']}, {'name': 'geonameid', 'props': ['P1566']},
-                    {'name': 'population', 'props': ['P1082']}]
-            wiki_ent['id'] = l['id']
-            for v in vals:
-                wiki_ent[v['name']] = []
-                for pid in v['props']:
-                    if pid in l['claims']:
-                        for s in l['claims'][pid]:
-                            if 'datavalue' in s['mainsnak']:
-                                if s['mainsnak']['datavalue']['type'] in ['monolingualtext']:
-                                    wiki_ent[v['name']].append(s['mainsnak']['datavalue']['value']['text'])
-                                elif s['mainsnak']['datavalue']['type'] in ['string']:
-                                    wiki_ent[v['name']].append(s['mainsnak']['datavalue']['value'])
-                                elif s['mainsnak']['datavalue']['type'] in ['wikibase-entityid']:
-                                    wiki_ent[v['name']].append(s['mainsnak']['datavalue']['value']['id'])
-                                elif s['mainsnak']['datavalue']['type'] in ['quantity']:
-                                    wiki_ent[v['name']].append(s['mainsnak']['datavalue']['value']['amount'])
-            #fo_geo.write(json.dumps(wiki_ent)+'\n')
-
 
         if ent_type:
             if ent_type == 'per':
@@ -145,9 +124,10 @@ def processw(line, onlyLabels=ONLY_LABELS):
                         {'name': 'headquarter', 'props': ['P159']}, {'name': 'web', 'props': ['P856']},
                         ]
             elif ent_type == 'loc':
-                vals = [{'name': 'country', 'props': ['P17', 'P159']}, {'name': 'geonames', 'props': ['P1566']},
-                         {'name': 'admin', 'props': ['P131']},
-                        {'name': 'population', 'props': ['P1082']}]
+                vals = [{'name': 'country', 'props': ['P17', 'P159']}, {'name': 'admin', 'props': ['P131']},
+                        {'name': 'geonameid', 'props': ['P1566']}, {'name': 'population', 'props': ['P1082']},
+                        {'name': 'dissolution', 'props': ['P576']}, {'name': 'todayin', 'props': ['P3842']},
+                        ]
             else:
                 raise NotImplemented
             wiki_ent['type'] = ent_type
@@ -204,7 +184,6 @@ def processw(line, onlyLabels=ONLY_LABELS):
 
 
 if __name__ == '__main__':
-
     if True:
         # wikidata osobe
         if COMPRESSED:
@@ -215,10 +194,10 @@ if __name__ == '__main__':
             fin = open(f'{BASE_DIR}/latest-all.json')
             fin.readline() # prvi razmak
         p = Pool(20)
-        wikinelma_all = open(f'{BASE_DIR}/wikinelma.jsonl', 'wb')
-        wikiname_all = open(f'{BASE_DIR}/wikiname.jsonl', 'wb')
-        wikil_all = open(f'{BASE_DIR}/wikil.jsonl', 'wb')
-        wiki_loc = open(f'{BASE_DIR}/wikiloc.jsonl', 'wb')
+        wikinelma_all = gzip.open(f'{BASE_DIR}/wikinelma.jsonl.gz', 'wb')
+        wikiname_all = gzip.open(f'{BASE_DIR}/wikiname.jsonl.gz', 'wb')
+        wikil_all = gzip.open(f'{BASE_DIR}/wikil.jsonl.gz', 'wb')
+        #wiki_loc = open(f'{BASE_DIR}/wikiloc.jsonl', 'wb')
 
         start = datetime.now()
         br, brr = 0, 0
@@ -263,28 +242,5 @@ if __name__ == '__main__':
         wikinelma_all.close()
         wikiname_all.close()
         wikil_all.close()
-        wiki_loc.close()
+        #wiki_loc.close()
 
-    if False:
-        WIKI_D = '/backup/wikidata/'
-        WIKI_O = 'data/'
-        fi = open(f'{WIKI_D}wikil.jsonl')
-        rec = {}
-        pbar = tqdm(total=100_123_689)
-        labels = set()
-        while True:
-            tmp = fi.readlines(150_000_000)
-            if len(tmp) == 0:
-                break
-            for line in tmp:
-                j = orjson.loads(line)
-                labels.update([a.lower().strip() for a in j if a != 'wiki_id'])
-            pbar.update(len(tmp))
-        pbar.close()
-        print('snimam')
-        #pickle.dump(labels, open(f'{WIKI_D}wikilabes4trie.pickle', 'wb'))
-        labels = tuple(labels)
-        trie = marisa_trie.Trie(labels)
-        labels = None
-        trie.save(f'{WIKI_O}labels.trie')
-        print('trie saved')

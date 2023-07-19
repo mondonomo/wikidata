@@ -1,6 +1,7 @@
 # wikizemlja
 import gzip, io
 import json
+import orjson
 import numpy as np
 import re
 from datetime import datetime
@@ -18,6 +19,7 @@ import sys
 sys.path.insert(0, '/projekti/mondoAPI')
 from pnu.text_utils import norm_pname
 from pnu.detect_lang_scr import get_provenance, get_scripts
+import gzip
 
 BASE_DIR = '/backup/wikidata'
 DATA_DIR = f'{Path(__file__).resolve().parent}/data'
@@ -102,6 +104,30 @@ def extract(line):
 
 
 if __name__ == '__main__':
+
+    if True:
+        WIKI_D = '/backup/wikidata/'
+        fi = gzip.open(f'{WIKI_D}wikil.jsonl.gz')
+        rec = {}
+        pbar = tqdm(total=100_123_689)
+        labels = set()
+        while True:
+            tmp = fi.readlines(150_000_000)
+            if len(tmp) == 0:
+                break
+            for line in tmp:
+                j = orjson.loads(line)
+                labels.update([a.lower().strip() for a in j if a != 'wiki_id'])
+            pbar.update(len(tmp))
+        pbar.close()
+        print('snimam')
+        #pickle.dump(labels, open(f'{WIKI_D}wikilabes4trie.pickle', 'wb'))
+        labels = tuple(labels)
+        trie = marisa_trie.Trie(labels)
+        labels = None
+        WIKI_O = 'data/'
+        trie.save(f'{WIKI_O}labels.trie')
+        print('trie saved')
 
     print('loading trie')
     trie = marisa_trie.Trie()
