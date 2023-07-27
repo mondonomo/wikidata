@@ -182,7 +182,6 @@ def processw(line, onlyLabels=ONLY_LABELS):
     wikil = extractLabels(l)
     return (wikiid, wikil, wiki_ent, wikiname, ent_type != None, gname or lname or lprefix)
 
-
 if __name__ == '__main__':
     if True:
         # wikidata osobe
