@@ -116,6 +116,7 @@ def processw(line, onlyLabels=ONLY_LABELS):
 
                         {'name': 'name_native', 'props': ['P1559']}, {'name': 'name_born', 'props': ['P1477']},
                         {'name': 'dob', 'props': ['P569']},
+                        {'name': 'dod', 'props': ['P570']},
                         {'name': 'picture', 'props': ['P18']},
                         {'name': 'affiliation', 'props': ['P69', 'P108', 'P937']},
                         ]
