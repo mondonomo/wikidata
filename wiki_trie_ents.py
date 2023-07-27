@@ -215,10 +215,10 @@ if __name__ == '__main__':
             fin = open(f'{BASE_DIR}/latest-all.json')
             fin.readline() # prvi razmak
         p = Pool(20)
-        wikinelma_all = open(f'{BASE_DIR}/wikinelma.jsonl', 'wb')
-        wikiname_all = open(f'{BASE_DIR}/wikiname.jsonl', 'wb')
-        wikil_all = open(f'{BASE_DIR}/wikil.jsonl', 'wb')
-        wiki_loc = open(f'{BASE_DIR}/wikiloc.jsonl', 'wb')
+        wikinelma_all = gzip.open(f'{BASE_DIR}/wikinelma.jsonl.gz', 'wt')
+        wikiname_all = gzip.open(f'{BASE_DIR}/wikiname.jsonl.gz', 'wt')
+        wikil_all = gzip.open(f'{BASE_DIR}/wikil.jsonl.gz', 'wt')
+        wiki_loc = gzip.open(f'{BASE_DIR}/wikiloc.jsonl.gz', 'wt')
 
         start = datetime.now()
         br, brr = 0, 0
