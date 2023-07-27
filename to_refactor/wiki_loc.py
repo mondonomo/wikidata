@@ -48,7 +48,7 @@ if __name__ == '__main__':
     fin = gzip.open(f'{BASE_DIR}/latest-all.json.gz', 'rb')
     fin.read(2)  # skip first two bytes: "{\n"
 
-    fo = open(f'{BASE_DIR}/wiki_loc.jsonl', 'w')
+    fo = gzip.open(f'{BASE_DIR}/wiki_loc.jsonl.gz', 'wt')
     pbar = tqdm(fin, total=102_364_283)
     while True:
         lines = fin.readlines(BATCH_SIZE)
@@ -60,8 +60,9 @@ if __name__ == '__main__':
             if l:
                 fo.write(l+'\n')
         pbar.update(len(lines))
+        fo.flush()
         if TEST:
             break
-
+    fo.close()
 
 
