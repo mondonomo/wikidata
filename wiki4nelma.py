@@ -24,10 +24,7 @@ def proc(l):
     qid = int(j['wiki_id'][1:])
     tip = j['type']
     if tip == 'per':
-        cc = get_wiki_cc(
-            {'country': j['country'], 'workedu': j['works_at'] + j['educated_at'], 'birthplace': j['birth_place'],
-             'deathplace': j['death_place'],
-             'language': j['native_language'], 'nationality': j['nationality']})
+        cc, ccs = get_wiki_cc({k: v for k, v in j in k in cc_weights})
         if j['gender'] == ['WIKI_Q6581097']:
             tip = 'per_1'
         elif j['gender'] == ['WIKI_Q6581072']:
@@ -38,7 +35,7 @@ def proc(l):
         else:
             cc = get_wiki_cc({'country': j['country'], 'headquarter': j['admin']})
     elif tip == 'org':
-        cc = get_wiki_cc({'country': j['country'], 'headquarter': j['headquarter']})
+        cc, ccs = get_wiki_cc({'country': j['country'], 'headquarter': j['headquarter']})
     else:
         raise NotImplementedError
 
