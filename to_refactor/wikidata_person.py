@@ -125,7 +125,7 @@ if __name__ == '__main__':
     print('počinjem ...')
 
     gotovo = False
-    fo = open('/backup/wikidata/wiki_person.jsonl', 'w')
+    fo = gzip.open('/backup/wikidata/wiki_person.jsonl.gz', 'wt')
     pbar = tqdm.tqdm(total=95_000_000)
     while not gotovo:
         lines = fin.readlines(1_000_000_000)

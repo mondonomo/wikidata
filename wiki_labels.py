@@ -30,7 +30,11 @@ def qid_lab_get(qid:int, filter_lang:str=None, include_alt:bool=False, return_al
     for lid, langs_id in zip(ls, langs):
         if not return_alt:
             if langs_id > 0 or include_alt:
-                langs = id2lang[abs(langs_id)]
+                if filter_lang:
+                    if len(filter_lang) == 2:
+                        langs = {(k.split('_')[0] if '_' in k else k[:2]) for k in id2lang[abs(langs_id)]}
+                    else:
+                        langs = id2lang[abs(langs_id)]
                 if not filter_lang or filter_lang in langs:
                     rec[trie.restore_key(lid)] = langs
         else:
@@ -72,5 +76,5 @@ if __name__ == '__main__':
     #print(qid_lab_get(191701, include_alt=True))
     #print(qid_lab_get(177053, include_alt=True))
     #print(qid_lab_get(177053, lang='th', include_alt=True))
-    #print(qid_lab_get(15732892, lang='th'))
+    print(qid_lab_get(15732892, lang='th'))
     print(qid_lab_get(31,  include_alt=True, return_alt=True))
