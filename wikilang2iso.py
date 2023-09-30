@@ -103,8 +103,8 @@ def get_wiki_cc(args):
                 qid = get_gid(bp)
                 if qid in q2cc:
                     ccs[q2cc[qid]] += weight
-    cc, ccs = ccs.most_common()[0] if len(ccs)>0 else ('', '')
-    return cc, ccs
+    cc, weight = ccs.most_common()[0] if len(ccs)>0 else ('', 0)
+    return cc, weight
 
 
 if __name__ == '__main__':

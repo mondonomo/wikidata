@@ -1,30 +1,30 @@
-import sys
-sys.path.insert(0, '/projekti/mondoAPI')
-sys.path.insert(0, '/projekti/wikidata')
+# import sys
+# sys.path.insert(0, '/projekti/mondoAPI')
+# sys.path.insert(0, '/projekti/wikidata')
+#
+import gzip
+from collections import Counter
+import pyarrow as pa
+import pyarrow.parquet as pq
 
-import json
-from collections import Counter, defaultdict
 from wiki_labels import qid_lab_get
-from wikilang2iso import get_wiki_cc, iso2w, cc2lang, q2cc
-from text_utils import cl
-from pnu.parse import parse
-from text_utils import get_provenance
-from api.db import db
+from wikilang2iso import get_wiki_cc, iso2w, cc2lang, q2cc, cc_weights
+# from pnu.parse import parse
+# from api.db import db
+from pnu.detect_lang_scr import get_script
+from model.dataset import nelma_ds, types_d, cc_d, lang_d, script_d, types_i, cc_i, lang_i, script_i
 from tqdm import tqdm
 import random
 from json import loads
 from multiprocessing import Pool
-print(get_wiki_cc({'country': ['Q161885','Q30'], 'birthplace': ['Q494413', 'Q216638'],
-                   'deathplace': ['Q731635']} ),
-        qid_lab_get(42, 'en').keys(), parse('davor lauc')['tags'][0])
 
 
-def proc(l):
-    j = loads(l)
+def proc(lng):
+    j = loads(lng)
     qid = int(j['wiki_id'][1:])
     tip = j['type']
     if tip == 'per':
-        cc, ccs = get_wiki_cc({k: v for k, v in j in k in cc_weights})
+        cc, cc_weight = get_wiki_cc({k: v1 for k, v1 in j.items() if k in cc_weights})
         if j['gender'] == ['WIKI_Q6581097']:
             tip = 'per_1'
         elif j['gender'] == ['WIKI_Q6581072']:
@@ -33,61 +33,75 @@ def proc(l):
         if j['wiki_id'] in q2cc:
             cc = q2cc[j['wiki_id']]
         else:
-            cc = get_wiki_cc({'country': j['country'], 'headquarter': j['admin']})
+            cc, cc_weight = get_wiki_cc({'country': j['country'], 'headquarter': j['admin']})
     elif tip == 'org':
-        cc, ccs = get_wiki_cc({'country': j['country'], 'headquarter': j['headquarter']})
+        cc, cc_weight = get_wiki_cc({'country': j['country'], 'headquarter': j['headquarter']})
     else:
         raise NotImplementedError
 
-    names = []
+    native_lang = None
     if 'native_language' in j and j['native_language']:
         langs = Counter([iso2w[q[5:]] for q in j['native_language'] if q[5:] in iso2w])
+        native_lang = langs.most_common()[0][0]
     else:
         langs = Counter()
-    if cc and cc in cc2lang:
-        langs.update(cc2lang[cc])
-    rows = {}
-    for lang, f in langs.most_common():
-        for l in qid_lab_get(qid, lang, False):
-            if l not in rows:
-                rows[l] = lang
-        for l in qid_lab_get(qid, lang, True):
-            if l not in rows:
-                rows[l] = lang
+    langs.update(cc2lang[cc])
+    names = {}
+    lng_max = 0
+    for lng, f in langs.most_common():
+        name_labels = qid_lab_get(qid, lng, include_alt=True)
+        for name in name_labels:
+            if name not in names:
+                scr = get_script(name)
+                names[name] = (tip, cc, lng, scr)
+        if f < lng_max:
+            break
+        else:
+            lng_max = f
+    if 'name_native' in j and j['name_native'] and j['name_native'][0] not in names:
+        name = j['name_native'][0]
+        scr = get_script(name)
+        if native_lang:
+            lng = native_lang
+        names[name] = (tip, cc, lng, scr)
+
     rec = []
-    for l, lang in rows.items():
-        prov = get_provenance(l, lang, no_countries=True)
-        if prov and l and len(l) > 1 and prov[0] and tip:
-            rec.append(f'{l}\t{tip} {prov[0]}\n')
+    for k, v1 in names.items():
+        rec.append({'name': k, 'type': types_i[v1[0]], 'cc': cc_i[v1[1]], 'lang': lang_i[v1[2]], 'script': script_i[v1[3]]})
+
     return rec
 
 
 if __name__ == '__main__':
 
-    fo = open('/projekti/mondodb_lm/wiki_train.tsv', 'w')
-    fot = open('/projekti/mondodb_lm/wiki_test.tsv', 'w')
-    fod = open('/projekti/mondodb_lm/wiki_dev.tsv', 'w')
-    #fo.write('qid\tname\tfn\tln\tdesc\tplace\tdob\timage\tsort\n')
+    if False:
+        print(get_wiki_cc({'country': ['Q161885', 'Q30'], 'birthplace': ['Q494413', 'Q216638'],
+                           'deathplace': ['Q731635']}),
+              qid_lab_get(42, 'en').keys(),
+              #               parse('davor lauc')['tags'][0]
+              )
+
     uk = 0
 
     p = Pool(10)
 
     batch = []
-    lines = open('/backup/wikidata/wikinelma.jsonl').readlines()
+
+    lines = gzip.open('/backup/wikidata/wikinelma.jsonl.gz', 'rt').readlines()
+    writer = pq.ParquetWriter("/projekit/mondodb_lm/wiki.parquet", schema)
+
     for i, l in tqdm(enumerate(lines), total=len(lines)):
         batch.append(l)
         if len(batch) > 1024 or i+1 == len(lines):
             recs = p.map(proc, batch)
+            batch_d = {k: [] for k in nelma_ds}
+            for rec_batch in recs:
+                for row_dict in rec_batch:
+                    for k, v in row_dict:
+                        batch_d[k] = v
+            batch_d['name'] = pa.array(batch_d['name'])
+            batch_d['type'] = pa.DictionaryArray.from_arrays(pa.array(indices, type=pa.int32()), types_d)
+            t = pa.Table.from_arrays(batch_d, schema=nelma_ds)
+            writer.write(t)
             batch = []
-            for rec in recs:
-                for tow in rec:
-                    r = random.random()
-                    if r < .01:
-                        fot.write(tow)
-                    elif r < .02:
-                        fod.write(tow)
-                    else:
-                        fo.write(tow)
-    fo.close()
-    fod.close()
-    fot.close()
+    writer.close()
