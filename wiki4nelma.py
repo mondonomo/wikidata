@@ -43,7 +43,7 @@ def proc(lng):
 
     native_lang = None
     if 'native_language' in j and j['native_language']:
-        langs = Counter([w2iso[iso2w[q[5:]]] for q in j['native_language'] if q[5:] in iso2w])
+        langs = Counter([iso2w[q[5:]][:2] for q in j['native_language'] if q[5:] in iso2w and iso2w[q[5:]][:2] in lang_i])
         native_lang = langs.most_common()[0][0]
     else:
         langs = Counter()
@@ -97,7 +97,7 @@ if __name__ == '__main__':
     for i, l in tqdm(enumerate(lines), total=len(lines)):
         batch.append(l)
         if len(batch) > 1024 or i+1 == len(lines):
-            recs = p.map(proc, batch)
+            recs = map(proc, batch)
             batch_d = {k: [] for k in nelma_ds}
             for rec_batch in recs:
                 for row_dict in rec_batch:
