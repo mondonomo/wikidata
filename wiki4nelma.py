@@ -8,11 +8,11 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 from wiki_labels import qid_lab_get
-from wikilang2iso import get_wiki_cc, iso2w, cc2lang, q2cc, cc_weights
+from wikilang2iso import get_wiki_cc, iso2w, cc2lang, q2cc, cc_weights, w2iso
 # from pnu.parse import parse
 # from api.db import db
 from pnu.detect_lang_scr import get_script
-from model.dataset import nelma_ds, types_d, cc_d, lang_d, script_d, types_i, cc_i, lang_i, script_i
+from model.dataset import nelma_schema, types_d, cc_d, lang_d, script_d, types_i, cc_i, lang_i, script_i
 from tqdm import tqdm
 import random
 from json import loads
@@ -38,10 +38,12 @@ def proc(lng):
         cc, cc_weight = get_wiki_cc({'country': j['country'], 'headquarter': j['headquarter']})
     else:
         raise NotImplementedError
+    if not cc:
+        return []
 
     native_lang = None
     if 'native_language' in j and j['native_language']:
-        langs = Counter([iso2w[q[5:]] for q in j['native_language'] if q[5:] in iso2w])
+        langs = Counter([w2iso[iso2w[q[5:]]] for q in j['native_language'] if q[5:] in iso2w])
         native_lang = langs.most_common()[0][0]
     else:
         langs = Counter()
@@ -53,7 +55,8 @@ def proc(lng):
         for name in name_labels:
             if name not in names:
                 scr = get_script(name)
-                names[name] = (tip, cc, lng, scr)
+                if tip and cc and lng and scr:
+                    names[name] = (tip, cc, lng, scr)
         if f < lng_max:
             break
         else:
@@ -63,7 +66,8 @@ def proc(lng):
         scr = get_script(name)
         if native_lang:
             lng = native_lang
-        names[name] = (tip, cc, lng, scr)
+        if tip and cc and lng and scr:
+            names[name] = (tip, cc, lng, scr)
 
     rec = []
     for k, v1 in names.items():
@@ -88,7 +92,7 @@ if __name__ == '__main__':
     batch = []
 
     lines = gzip.open('/backup/wikidata/wikinelma.jsonl.gz', 'rt').readlines()
-    writer = pq.ParquetWriter("/projekit/mondodb_lm/wiki.parquet", schema)
+    writer = pq.ParquetWriter("/projekti/mondodb_lm/wiki.parquet", nelma_schema)
 
     for i, l in tqdm(enumerate(lines), total=len(lines)):
         batch.append(l)
