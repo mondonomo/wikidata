@@ -227,6 +227,17 @@ if __name__ == '__main__':
                     wikil_all.write(orjson.dumps(wl, option=orjson.OPT_APPEND_NEWLINE))
                 if isent:
                     wp['wiki_id'] = id
+                    labels = {}
+                    for lab, lngl in wl.items():
+                        try:
+                            for _, lng in lngl:
+                                if lng in labels:
+                                    labels[lng].append(lab)
+                                else:
+                                    labels[lng] = [lab]
+                        except:
+                            pass
+                    wp['labels'] = labels
                     wikinelma_all.write(orjson.dumps(wp, option=orjson.OPT_APPEND_NEWLINE))
                 if isname:
                     wn['wiki_id'] = id

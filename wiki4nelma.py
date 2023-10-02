@@ -17,7 +17,7 @@ from tqdm import tqdm
 import random
 from json import loads
 from multiprocessing import Pool
-
+from wiki_trie_ents import extractLabels
 
 def proc(lng):
     j = loads(lng)
@@ -40,11 +40,13 @@ def proc(lng):
         raise NotImplementedError
     if not cc:
         return []
+    if cc == 'UK':
+        cc = 'GB'
 
     native_lang = None
     if 'native_language' in j and j['native_language']:
         langs = Counter([iso2w[q[5:]][:2] for q in j['native_language'] if q[5:] in iso2w and iso2w[q[5:]][:2] in lang_i])
-        native_lang = langs.most_common()[0][0]
+        native_lang = langs.most_common()[0][0] if langs else ''
     else:
         langs = Counter()
     langs.update(cc2lang[cc])
@@ -90,22 +92,28 @@ if __name__ == '__main__':
     p = Pool(10)
 
     batch = []
+    BS = 100_000
 
     lines = gzip.open('/backup/wikidata/wikinelma.jsonl.gz', 'rt').readlines()
     writer = pq.ParquetWriter("/projekti/mondodb_lm/wiki.parquet", nelma_schema)
 
     for i, l in tqdm(enumerate(lines), total=len(lines)):
         batch.append(l)
-        if len(batch) > 1024 or i+1 == len(lines):
-            recs = map(proc, batch)
-            batch_d = {k: [] for k in nelma_ds}
+        if len(batch) > BS or i+1 == len(lines):
+            recs = p.map(proc, batch)
+            batch_d = {k.name: [] for k in nelma_schema}
             for rec_batch in recs:
                 for row_dict in rec_batch:
-                    for k, v in row_dict:
-                        batch_d[k] = v
-            batch_d['name'] = pa.array(batch_d['name'])
-            batch_d['type'] = pa.DictionaryArray.from_arrays(pa.array(indices, type=pa.int32()), types_d)
-            t = pa.Table.from_arrays(batch_d, schema=nelma_ds)
+                    for k, v in row_dict.items():
+                        batch_d[k].append(v)
+
+            t = pa.Table.from_arrays([pa.array(batch_d['name']),
+                                      pa.DictionaryArray.from_arrays(pa.array(batch_d['type'], type=pa.uint8()), types_d),
+                                      pa.DictionaryArray.from_arrays(pa.array(batch_d['cc'], type=pa.uint8()), cc_d),
+                                      pa.DictionaryArray.from_arrays(pa.array(batch_d['lang'], type=pa.uint8()), lang_d),
+                                      pa.DictionaryArray.from_arrays(pa.array(batch_d['script'], type=pa.uint8()), script_d)
+                                      ], schema=nelma_schema)
             writer.write(t)
             batch = []
+            #break
     writer.close()

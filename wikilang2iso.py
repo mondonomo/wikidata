@@ -6,6 +6,8 @@ import os
 
 BASE_DIR = Path(__file__).resolve().parent
 (wikil2cc, cc2lang, iso2w, w2iso) = json.load(open(os.path.join(BASE_DIR, 'data/wikilang2iso.json')))
+
+cc2lang['GS'] = 'en' # TODO u bazu
 cc2lang['UK'] = cc2lang['GB']
 from wiki_location import q2cc
 
@@ -81,8 +83,8 @@ def get_gid(w):
 
 
 cc_weights = {'birthplace': 2, 'deathplace': 2, 'headquater':2, 'country': 3, 'nationality': 3, 'language': 1,
-              'residence': 1, 'birth_place': 2, 'death_place': 2, 'positions': 1, 'educated_at': 1, 'works_at': 1,
-              'headquarter': 3, 'workedu': 1, 'native_language': 1}
+              'residence': 1, 'birth_place': 2, 'death_place': 2, 'positions': 0.5, 'educated_at': 0.5, 'works_at': 0.5,
+              'headquarter': 3, 'workedu': 1, 'native_language': 1 }
 
 
 def get_wiki_cc(args):

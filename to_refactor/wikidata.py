@@ -50,7 +50,7 @@ def extractLabels(l):
     rec = {r: list(v) for r, v in labelitems.items() if r and len(r) > 0}
     return rec
 
-
+wi
 def processw(line, onlyLabels=ONLY_LABELS):
     wiki_ent = {}
     wikiname = {}
@@ -209,11 +209,11 @@ if __name__ == '__main__':
             fin = open(f'{BASE_DIR}/latest-all.json')
             fin.readline() # prvi razmak
         p = Pool(10)
-        wikinelma_all = open(f'{BASE_DIR}/wikinelma.jsonl', 'wb')
-        wikiname_all = open(f'{BASE_DIR}/wikiname.jsonl', 'wb')
-        wikil_all = open(f'{BASE_DIR}/wikil.jsonl', 'wb')
-        wiki_loc = open(f'{BASE_DIR}/wikiloc.jsonl', 'wb')
-
+        wikinelma_all = gzip.open(f'{BASE_DIR}/wikinelma.jsonl.gz', 'wt')
+        wikiname_all = gzip.open(f'{BASE_DIR}/wikiname.jsonl.gz', 'wt')
+        wikil_all = gzip.open(f'{BASE_DIR}/wikil.jsonl.gz', 'wt')
+        wiki_loc = gzip.open(f'{BASE_DIR}/wikiloc.jsonl.gz', 'wt')
+e
         start = datetime.now()
         br, brr = 0, 0
         tmp = []
@@ -221,7 +221,7 @@ if __name__ == '__main__':
         print('počinjem ...')
 
         gotovo = False
-        pbar = tqdm(total= 96_709_722)
+        pbar = tqdm(total= 100_000_000)
 
         while not gotovo:
             lines = fin.readlines(10_000_000_000)
