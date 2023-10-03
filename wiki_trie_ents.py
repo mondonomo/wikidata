@@ -1,9 +1,9 @@
-import orjson
 from multiprocessing import Pool
 from data.wiki_types import wikiloc, wikiln, wikifn, wikiorg, wiki_title
 import gzip
 from datetime import datetime
-from tqdm import tqdm
+from tqdm.auto import tqdm
+import json
 import re
 from collections import defaultdict
 
@@ -56,7 +56,7 @@ def processw(line, onlyLabels=ONLY_LABELS):
         l = line.strip(',\r\n ')
     # l = json.loads(l)
     try:
-        l = orjson.loads(l)  # orjson
+        l = json.loads(l)
     except Exception as e:
         ukj = l.count('}{')
         print(e, ukj)
@@ -68,14 +68,12 @@ def processw(line, onlyLabels=ONLY_LABELS):
             print('BAD', l)
         return None
     wikiid = l['id']
-    t = None
+    name_t = None
     ent_type = None
-    gname = False
-    lname = False
+    first_name = False
+    last_name = False
     lprefix = False
-    ltitle = False
-    wname = False
-    wikil = None
+    title = False
     if not onlyLabels and 'claims' in l:
         if 'P31' in l['claims']:
             for a in l['claims']['P31']:
@@ -86,17 +84,15 @@ def processw(line, onlyLabels=ONLY_LABELS):
                 elif 'datavalue' in a['mainsnak'] and (a['mainsnak']['datavalue']['value']['id'] in wikiorg or 'P414'in l['claims'] or 'P1128'in l['claims']):
                     ent_type = 'org'
                 elif 'datavalue' in a['mainsnak'] and a['mainsnak']['datavalue']['value']['id'] in wikifn:  # given name
-                    gname = True
+                    first_name = True
                 elif 'datavalue' in a['mainsnak'] and a['mainsnak']['datavalue']['value']['id'] in ['Q2620828',
                                                                                                   'Q66475447',
                                                                                                   'Q16591923']:  # de
                     lprefix = True
                 elif 'datavalue' in a['mainsnak'] and a['mainsnak']['datavalue']['value']['id'] in wikiln:
-                    lname = True
+                    last_name = True
                 elif 'datavalue' in a['mainsnak'] and a['mainsnak']['datavalue']['value']['id'] in wiki_title:
-                    wikil = True
-                elif 'datavalue' in a['mainsnak'] and a['mainsnak']['datavalue']['value']['id'] in ['Q96477712']:
-                    wname = True
+                    title = True
 
         if ent_type:
             if ent_type == 'per':
@@ -148,7 +144,8 @@ def processw(line, onlyLabels=ONLY_LABELS):
                             else:
                                 pass
 
-        if gname or lname or lprefix or wiki_title or wname or wikil:
+        name_t = None
+        if first_name or last_name or lprefix  or title:
             vals = [{'name': 'instance', 'props': ['P31']}, {'name': 'variants', 'props': ['P460']},
                     {'name': 'oposite_gender', 'props': ['P1560']},
                     {'name': 'nickname', 'props': ['P1449', 'P468', 'P512']},
@@ -157,15 +154,15 @@ def processw(line, onlyLabels=ONLY_LABELS):
                     {'name': 'transliteration', 'props': ['P2440']},
                     {'name': 'short_name', 'props': ['P1813']},
                     ]
-            if gname:
-                t = 'N.FN'
-            elif lname:
-                t = 'N.LN'
+            if first_name:
+                name_t = 'N.FN'
+            elif last_name:
+                name_t = 'N.LN'
             elif lprefix:
-                t = 'N.LN.PREF'
-            elif wiki_title:
-                t = 'N.TITLE'
-            wikiname = {'type': t}
+                name_t = 'N.LN.PREF'
+            elif title:
+                name_t = 'N.TITLE'
+            wikiname = {'type': name_t}
             for v in vals:
                 wikiname[v['name']] = []
                 for pid in v['props']:
@@ -179,8 +176,8 @@ def processw(line, onlyLabels=ONLY_LABELS):
                                 elif s['mainsnak']['datavalue']['type'] in ['wikibase-entityid']:
                                     wikiname[v['name']].append('WIKI_' + s['mainsnak']['datavalue']['value']['id'])
 
-    wikil = extractLabels(l)
-    return (wikiid, wikil, wiki_ent, wikiname, ent_type != None, gname or lname or lprefix)
+    title = extractLabels(l)
+    return (wikiid, title, wiki_ent, wikiname, not ent_type is None, not name_t is None)
 
 if __name__ == '__main__':
     if True:
@@ -221,12 +218,10 @@ if __name__ == '__main__':
 
             r = [a for a in p.map(processw, lines) if a]
             for id, wl, wp, wn, isent, isname in r:
+                labels = {}
                 if wl:
                     wl['wiki_id'] = id
                     wikil_all.write(orjson.dumps(wl, option=orjson.OPT_APPEND_NEWLINE))
-                if isent:
-                    wp['wiki_id'] = id
-                    labels = {}
                     for lab, lngl in wl.items():
                         try:
                             for _, lng in lngl:
@@ -238,10 +233,13 @@ if __name__ == '__main__':
                                     labels[lng] = [lab]
                         except:
                             pass
+                if isent:
+                    wp['wiki_id'] = id
                     wp['labels'] = labels
                     wikinelma_all.write(orjson.dumps(wp, option=orjson.OPT_APPEND_NEWLINE))
                 if isname:
                     wn['wiki_id'] = id
+                    wp['labels'] = labels
                     wikiname_all.write(orjson.dumps(wn, option=orjson.OPT_APPEND_NEWLINE))
 
             # print(wikiperson_all); break
