@@ -231,6 +231,8 @@ if __name__ == '__main__':
                     for lab, lngl in wl.items():
                         try:
                             for _, lng in lngl:
+                                if len(lng) > 2 and lng[2] == '-':
+                                    lng = lng[:2]
                                 if lng in labels:
                                     labels[lng].append(lab)
                                 else:
