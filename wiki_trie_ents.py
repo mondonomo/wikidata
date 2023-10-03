@@ -1,5 +1,4 @@
 import orjson
-import marisa_trie
 from multiprocessing import Pool
 from data.wiki_types import wikiloc, wikiln, wikifn, wikiorg, wiki_title
 import gzip
