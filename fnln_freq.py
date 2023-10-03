@@ -145,7 +145,7 @@ if __name__ == '__main__':
 
     pbar = tqdm(total=10_044_572)
     fi = open('/backup/wikidata/wiki_person.jsonl')
-    fo =  open('/backup/wikidata/fnln.txt', 'w')
+    fo = open('/backup/wikidata/fnln.txt', 'w')
     while True:
         lines = fi.readlines(10_000_000)
         if not lines:
