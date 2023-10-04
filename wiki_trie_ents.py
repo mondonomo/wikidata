@@ -1,4 +1,5 @@
 from multiprocessing import Pool
+import orjson
 from data.wiki_types import wikiloc, wikiln, wikifn, wikiorg, wiki_title
 import gzip
 from datetime import datetime
@@ -21,6 +22,7 @@ fob = open('wikidata_bad.txt', 'w')
 def cl(s):
     c = zag.sub('', s).strip()
     return c
+
 
 def extractLabels(l):
     labelitems = defaultdict(list)

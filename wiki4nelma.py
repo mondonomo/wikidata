@@ -12,6 +12,7 @@ from wikilang2iso import get_wiki_cc, iso2w, cc2lang, q2cc, cc_weights, w2iso
 # from pnu.parse import parse
 # from api.db import db
 from pnu.detect_lang_scr import get_script
+from pnu.parse import parse_known_parts, parse, spans_to_tags
 from model.dataset import nelma_schema, types_d, cc_d, lang_d, script_d, types_i, cc_i, lang_i, script_i
 from tqdm import tqdm
 import random
@@ -52,6 +53,7 @@ def proc(lng):
     langs.update(cc2lang[cc])
     names = {}
     lng_max = 0
+    used_langs = set()
     for lng, f in langs.most_common():
         name_labels = qid_lab_get(qid, lng, include_alt=True)
         for name in name_labels:
@@ -63,6 +65,7 @@ def proc(lng):
             break
         else:
             lng_max = f
+        used_langs.add(lng)
     if 'name_native' in j and j['name_native'] and j['name_native'][0] not in names:
         name = j['name_native'][0]
         scr = get_script(name)
@@ -73,6 +76,9 @@ def proc(lng):
 
     rec = []
     for k, v1 in names.items():
+        # parse
+        name_parts = {}
+
         rec.append({'name': k, 'type': types_i[v1[0]], 'cc': cc_i[v1[1]], 'lang': lang_i[v1[2]], 'script': script_i[v1[3]]})
 
     return rec
