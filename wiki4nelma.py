@@ -101,9 +101,10 @@ if __name__ == '__main__':
     batch = []
     BS = 100_000
 
-    lines = gzip.open('/backup/wikidata/wikinelma.jsonl.gz', 'rt').readlines()
-    writer = pq.ParquetWriter("/projekti/mondodb_lm/wiki.parquet", nelma_schema)
-
+    #lines = gzip.open('/backup/wikidata/wikinelma.jsonl.gz', 'rt').readlines()
+    lines = gzip.open('/Users/davor/Downloads/wikinelma.jsonl.gz', 'rt').readlines()
+    #writer = pq.ParquetWriter("/projekti/mondodb_lm/wiki.parquet", nelma_schema)
+    writer = pq.ParquetWriter("/Users/davor/Downloads/wiki.parquet", nelma_schema)
     for i, l in tqdm(enumerate(lines), total=len(lines)):
         batch.append(l)
         if len(batch) > BS or i+1 == len(lines):
