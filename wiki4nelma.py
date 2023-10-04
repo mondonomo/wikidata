@@ -20,6 +20,7 @@ from json import loads
 from multiprocessing import Pool
 from wiki_trie_ents import extractLabels
 
+
 def proc(lng):
     j = loads(lng)
     qid = int(j['wiki_id'][1:])
