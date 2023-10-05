@@ -96,10 +96,13 @@ def proc(lng):
                 if tip in tag_set:
                     for wiki_id in wiki_ids:
                         for label in qid_lab_get(int(wiki_id[6:])):
-                            if label not in name_parts name_parts[label] = tip:
+                            if label not in name_parts:
                                 name_parts[label] = tip
-                            else:  #  ambigous
+                            elif name_parts[label] != tip:  #  ambigous
                                 name_parts.pop(label)
+                            if tip == 'fn' and len(label)>1:
+                                short_name = label[0]+'.'
+                                name_parts[short_name] = tip
             if name_parts:
                 name = name.lower().strip()
                 try:
