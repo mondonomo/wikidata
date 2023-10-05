@@ -27,6 +27,8 @@ logging.basicConfig(filename='wiki4melma.log', encoding='utf-8', level=logging.D
 def proc(lng):
     j = loads(lng)
     qid = int(j['wiki_id'][1:])
+    #if qid != 61533472:
+    #    return {}
     tip = j['type']
     if tip == 'per':
         cc, cc_weight = get_wiki_cc({k: v1 for k, v1 in j.items() if k in cc_weights})
@@ -83,7 +85,7 @@ def proc(lng):
     rec = []
     for name, v1 in names.items():
 
-        if v1[0] == 'per':
+        if v1[0][:3] == 'per':
             # parse
             name_parts = {}
             for tip, wiki_ids in j.items():
