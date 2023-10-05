@@ -96,7 +96,7 @@ def proc(lng):
                 if tip in tag_set:
                     for wiki_id in wiki_ids:
                         for label in qid_lab_get(int(wiki_id[6:])):
-                            if label not in name_parts:
+                            if label not in name_parts name_parts[label] = tip:
                                 name_parts[label] = tip
                             else:  #  ambigous
                                 name_parts.pop(label)
@@ -110,6 +110,7 @@ def proc(lng):
                 if name_parts and tags == '':
                     logging.debug('empty' + name + str(name_parts))
                 tags = spans_to_tags(tags) if tags else ''
+
             else:
                 tags = '' # TODO  parse ?
         else:
