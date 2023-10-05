@@ -21,7 +21,7 @@ from json import loads
 from multiprocessing import Pool
 from wiki_trie_ents import extractLabels
 
-logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.DEBUG)
+logging.basicConfig(filename='wiki4melma.log', encoding='utf-8', level=logging.DEBUG)
 
 
 def proc(lng):
@@ -85,13 +85,17 @@ def proc(lng):
 
         if v1[0] == 'per':
             # parse
-            name_parts = defaultdict(set)
+            name_parts = {}
             for tip, wiki_ids in j.items():
                 if tip in ('position', 'sufix', 'affiliation'):
                     tip = 'title'
                 if tip in tag_set:
                     for wiki_id in wiki_ids:
-                        name_parts[tip].update(qid_lab_get(int(wiki_id[6:])))
+                        for label in qid_lab_get(int(wiki_id[6:])):
+                            if label not in name_parts:
+                                name_parts[label] = tip
+                            else:  #  ambigous
+                                name_parts.pop(label)
             if name_parts:
                 name = name.lower().strip()
                 try:
