@@ -1,6 +1,7 @@
-# import sys
-# sys.path.insert(0, '/projekti/mondoAPI')
-# sys.path.insert(0, '/projekti/wikidata')
+import logging
+import sys
+sys.path.insert(0, '/projekti/mondoAPI')
+sys.path.insert(0, '/projekti/nelma')
 #
 import gzip
 from collections import Counter, defaultdict
@@ -12,7 +13,7 @@ from wikilang2iso import get_wiki_cc, iso2w, cc2lang, q2cc, cc_weights, w2iso
 # from pnu.parse import parse
 # from api.db import db
 from pnu.detect_lang_scr import get_script
-from pnu.parse import parse_known_parts, parse, spans_to_tags, tag_to_char
+from pnu.parse import parse_known_parts, parse, spans_to_tags, tag_set
 from model.dataset import nelma_schema, types_d, cc_d, lang_d, script_d, types_i, cc_i, lang_i, script_i
 from tqdm import tqdm
 import random
@@ -20,7 +21,8 @@ from json import loads
 from multiprocessing import Pool
 from wiki_trie_ents import extractLabels
 
-tag_set = {k for k, v in tag_to_char}
+logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.DEBUG)
+
 
 def proc(lng):
     j = loads(lng)
@@ -92,8 +94,14 @@ def proc(lng):
                         name_parts[tip].update(qid_lab_get(int(wiki_id[6:])))
             if name_parts:
                 name = name.lower().strip()
-                tags = parse_known_parts(name, name_parts)
-                tags = tag_to_char(tags) if tags else ''
+                try:
+                    tags = parse_known_parts(name, name_parts)
+                except Exception as e:
+                    logging.error(name + str(name_parts) + str(e))
+                    tags = ''
+                if name_parts and tags == '':
+                    logging.debug('empty' + name + str(name_parts))
+                tags = spans_to_tags(tags) if tags else ''
             else:
                 tags = '' # TODO  parse ?
         else:
@@ -126,7 +134,7 @@ if __name__ == '__main__':
     for i, l in tqdm(enumerate(lines), total=len(lines)):
         batch.append(l)
         if len(batch) > BS or i+1 == len(lines):
-            recs = map(proc, batch)
+            recs = p.map(proc, batch)
             batch_d = {k.name: [] for k in nelma_schema}
             for rec_batch in recs:
                 for row_dict in rec_batch:
@@ -137,7 +145,8 @@ if __name__ == '__main__':
                                       pa.DictionaryArray.from_arrays(pa.array(batch_d['type'], type=pa.uint8()), types_d),
                                       pa.DictionaryArray.from_arrays(pa.array(batch_d['cc'], type=pa.uint8()), cc_d),
                                       pa.DictionaryArray.from_arrays(pa.array(batch_d['lang'], type=pa.uint8()), lang_d),
-                                      pa.DictionaryArray.from_arrays(pa.array(batch_d['script'], type=pa.uint8()), script_d)
+                                      pa.DictionaryArray.from_arrays(pa.array(batch_d['script'], type=pa.uint8()), script_d),
+                                      pa.array(batch_d['tags']),
                                       ], schema=nelma_schema)
             writer.write(t)
             batch = []
