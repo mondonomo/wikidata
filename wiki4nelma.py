@@ -20,9 +20,11 @@ import random
 from json import loads
 from multiprocessing import Pool
 from wiki_trie_ents import extractLabels
+from random import random
 
 logging.basicConfig(filename='wiki4melma.log', encoding='utf-8', level=logging.DEBUG)
 
+DO_SAMPLE = True
 
 def proc(lng):
     j = loads(lng)
@@ -85,7 +87,7 @@ def proc(lng):
     rec = []
     for name, v1 in names.items():
 
-        if v1[0][:3] == 'per':
+        if v1[0][:3] == 'per' and (not DO_SAMPLE or random() < 0.01):
             # parse
             name_parts = {}
             for tip, wiki_ids in j.items():
@@ -128,7 +130,7 @@ if __name__ == '__main__':
 
     uk = 0
 
-    p = Pool(10)
+    p = Pool()
 
     batch = []
     BS = 100_000
