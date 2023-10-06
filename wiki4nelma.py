@@ -112,7 +112,11 @@ def proc(lng):
                     tags = ''
                 if name_parts and tags == '':
                     logging.debug('empty' + name + str(name_parts))
-                tags = spans_to_tags(name, tags) if tags else ''
+                try:
+                    tags = spans_to_tags(name, tags) if tags else ''
+                except:
+                    logging.error(name+'\n'+str(name_parts)+'\n'+str(tags))
+                    raise
 
             else:
                 tags = '' # TODO  parse ?
