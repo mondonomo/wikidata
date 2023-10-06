@@ -24,7 +24,7 @@ from random import random
 
 logging.basicConfig(filename='wiki4melma.log', encoding='utf-8', level=logging.DEBUG)
 
-DO_SAMPLE = True
+DO_SAMPLE = False
 
 def proc(lng):
     j = loads(lng)
@@ -84,40 +84,41 @@ def proc(lng):
         if tip and cc and lng and scr:
             names[name] = (tip, cc, lng, scr)
 
+    name_parts = {}
+    if tip[:3] == 'per':
+        for tip, wiki_ids in j.items():
+            if tip in ('position', 'sufix', 'affiliation'):
+                tip = 'title'
+            if tip in tag_set:
+                for wiki_id in wiki_ids:
+                    for label in qid_lab_get(int(wiki_id[6:])):
+                        if label not in name_parts:
+                            name_parts[label] = tip
+                        elif name_parts[label] != tip:  # ambigous
+                            name_parts.pop(label)
+                        if tip == 'fn' and len(label) > 1:
+                            short_name = label[0] + '.'
+                            name_parts[short_name] = tip
     rec = []
     for name, v1 in names.items():
-
-        if v1[0][:3] == 'per' and (not DO_SAMPLE or random() < 0.01):
+        if v1[0][:3] == 'per' and name_parts and (not DO_SAMPLE or random() < 0.01):
             # parse
-            name_parts = {}
-            for tip, wiki_ids in j.items():
-                if tip in ('position', 'sufix', 'affiliation'):
-                    tip = 'title'
-                if tip in tag_set:
-                    for wiki_id in wiki_ids:
-                        for label in qid_lab_get(int(wiki_id[6:])):
-                            if label not in name_parts:
-                                name_parts[label] = tip
-                            elif name_parts[label] != tip:  #  ambigous
-                                name_parts.pop(label)
-                            if tip == 'fn' and len(label)>1:
-                                short_name = label[0]+'.'
-                                name_parts[short_name] = tip
             if name_parts:
-                name = name.lower().strip()
                 try:
+                    logging.debug(qid)
                     tags = parse_known_parts(name, name_parts)
                 except Exception as e:
                     logging.error(name + str(name_parts) + str(e))
                     tags = ''
                 if name_parts and tags == '':
                     logging.debug('empty' + name + str(name_parts))
-                tags = spans_to_tags(tags) if tags else ''
+                tags = spans_to_tags(name, tags) if tags else ''
 
             else:
                 tags = '' # TODO  parse ?
         else:
             tags = ''
+
         rec.append({'name': name, 'tags': tags, 'type': types_i[v1[0]], 'cc': cc_i[v1[1]], 'lang': lang_i[v1[2]], 'script': script_i[v1[3]]})
 
     return rec
@@ -137,15 +138,16 @@ if __name__ == '__main__':
     p = Pool()
 
     batch = []
-    BS = 100_000
+    BS = 1_000_000
 
-    lines = gzip.open('/backup/wikidata/wikinelma.jsonl.gz', 'rt').readlines()
+
    # lines = gzip.open('/Users/davor/Downloads/wikinelma.jsonl.gz', 'rt').readlines()
-    writer = pq.ParquetWriter("/projekti/mondodb_lm/wiki.parquet", nelma_schema)
     # writer = pq.ParquetWriter("/Users/davor/Downloads/wiki.parquet", nelma_schema)
-    for i, l in tqdm(enumerate(lines), total=len(lines)):
+    lenlines = 25384364
+    br = 0
+    for i, l in tqdm(enumerate(gzip.open('/backup/wikidata/wikinelma.jsonl.gz', 'rt')), total=lenlines):
         batch.append(l)
-        if len(batch) > BS or i+1 == len(lines):
+        if len(batch) > BS or i+1 == lenlines:
             recs = p.map(proc, batch)
             batch_d = {k.name: [] for k in nelma_schema}
             for rec_batch in recs:
@@ -160,7 +162,9 @@ if __name__ == '__main__':
                                       pa.DictionaryArray.from_arrays(pa.array(batch_d['script'], type=pa.uint8()), script_d),
                                       pa.array(batch_d['tags']),
                                       ], schema=nelma_schema)
+            writer = pq.ParquetWriter(f"/projekti/mondodb_lm/wiki_{br}.parquet", nelma_schema)
             writer.write(t)
+            writer.close()
+            br += 1
             batch = []
             #break
-    writer.close()
