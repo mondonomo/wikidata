@@ -76,5 +76,5 @@ if __name__ == '__main__':
     #print(qid_lab_get(191701, include_alt=True))
     #print(qid_lab_get(177053, include_alt=True))
     #print(qid_lab_get(177053, lang='th', include_alt=True))
-    print(qid_lab_get(15732892, filter_lang='th'))
-    print(qid_lab_get(31,  include_alt=True, return_alt=True))
+    #print(qid_lab_get(15732892, filter_lang='th'))
+    print(qid_lab_get(901,  include_alt=True, return_alt=True))
