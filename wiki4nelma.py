@@ -22,9 +22,10 @@ from multiprocessing import Pool
 from wiki_trie_ents import extractLabels
 from random import random
 
-logging.basicConfig(filename='wiki4melma.log', encoding='utf-8', level=logging.DEBUG)
+logging.basicConfig(filename='wiki4nelma.log', encoding='utf-8', level=logging.DEBUG, filemode='w')
 
 DO_SAMPLE = False
+
 
 def proc(lng):
     j = loads(lng)
@@ -114,8 +115,8 @@ def proc(lng):
                     logging.debug('empty' + name + str(name_parts))
                 try:
                     tags = spans_to_tags(name, tags) if tags else ''
-                except:
-                    logging.error(name+'\n'+str(name_parts)+'\n'+str(tags))
+                except Exception as e:
+                    logging.error('spans '+name+'\n'+str(name_parts)+'\n'+str(tags) + str(e))
                     raise
 
             else:
