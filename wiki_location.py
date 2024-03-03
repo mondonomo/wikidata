@@ -1,4 +1,6 @@
 import json
+import gzip
+import logging
 
 WIKI_DIR = '/backup/wikidata'
 
@@ -8,9 +10,12 @@ w2cc = {'Q26': 'UK', 'Q31':'BE', 'Q155':'BR', 'Q39':'CH', 'Q1008':'CI', 'Q298':'
 
 if True:
     q2cc = {}
-    for line in open(f'{WIKI_DIR}/wiki_loc.jsonl'):
-        j = json.loads(line)
-        for qc in j['country']:
-            if qc in w2cc:
-                q2cc[j['id']] = w2cc[qc]
-                break
+    try:
+        for line in gzip.open(f'{WIKI_DIR}/wiki_loc.jsonl.gz', 'rt'):
+            j = json.loads(line)
+            for qc in j['country']:
+                if qc in w2cc:
+                    q2cc[j['id']] = w2cc[qc]
+                    break
+    except Exception as e:
+        print('missing q2cc: '+ str(e))

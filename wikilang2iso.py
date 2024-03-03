@@ -6,11 +6,16 @@ import os
 
 BASE_DIR = Path(__file__).resolve().parent
 (wikil2cc, cc2lang, iso2w, w2iso) = json.load(open(os.path.join(BASE_DIR, 'data/wikilang2iso.json')))
+
+cc2lang['GS'] = 'en' # TODO u bazu
 cc2lang['UK'] = cc2lang['GB']
 from wiki_location import q2cc
 
 
 def load_from_airtable():
+    raise NotImplementedError
+    #  TODO - popraviti
+
     WIKI_DIR = '/backup/wikidata'
     api_key = open('airtable_key.txt').read()
     from pyairtable import Table, Api
@@ -77,18 +82,19 @@ def get_gid(w):
     return w
 
 
-weights = {'birthplace': 1, 'deathplace': 1, 'headquater':2, 'country': 2, 'nationality': 2, 'language': 1,
-           'headquarter':3, 'workedu': 1}
+cc_weights = {'birthplace': 2, 'deathplace': 2, 'headquater':2, 'country': 3, 'nationality': 3, 'language': 1,
+              'residence': 1, 'birth_place': 2, 'death_place': 2, 'positions': 0.5, 'educated_at': 0.5, 'works_at': 0.5,
+              'headquarter': 3, 'workedu': 1, 'native_language': 1 }
 
 
 def get_wiki_cc(args):
     ccs = Counter()
     for typ, bps  in args.items():
-        if typ in weights:
-            weight = weights[typ]
+        if typ in cc_weights:
+            weight = cc_weights[typ]
         else:
             raise NotImplementedError
-        if type == 'language':
+        if 'language' in typ:
             for lng in bps:
                 lng = get_gid(lng)
                 if lng in wikil2cc:
@@ -99,14 +105,14 @@ def get_wiki_cc(args):
                 qid = get_gid(bp)
                 if qid in q2cc:
                     ccs[q2cc[qid]] += weight
-    cc, _ = ccs.most_common()[0] if len(ccs) > 0 else (None, None)
-    return cc
+    cc, weight = ccs.most_common()[0] if len(ccs)>0 else ('', 0)
+    return cc, weight
 
 
 if __name__ == '__main__':
-    if True:
+    if False:
         load_from_airtable()
-    (wikil2cc, cc2lang, iso2w, w2iso) = json.load(open('data/wikilang2iso.json', 'r'))
+        (wikil2cc, cc2lang, iso2w, w2iso) = json.load(open('data/wikilang2iso.json', 'r'))
     print(wikil2cc['Q1860']['US'], cc2lang['CH'], w2iso['hr'])
     print(get_wiki_cc({'country': ['Q161885','Q30'], 'birthplace': ['Q494413', 'Q216638'],
                        'deathplace': ['Q731635']} ))

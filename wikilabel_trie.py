@@ -5,10 +5,11 @@ from multiprocessing import Pool
 import numpy as np
 import msgpack
 import marisa_trie
+import gzip
 
 if __name__ == '__main__':
     WIKI_D = '/backup/wikidata/'
-    fi = open(f'{WIKI_D}wikil.jsonl')
+    fi = gzip.open(f'{WIKI_D}wikil.jsonl.gz', 'rt')
     rec = {}
     pbar = tqdm(total=98_123_689)
     labels = set()

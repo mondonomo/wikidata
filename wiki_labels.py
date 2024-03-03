@@ -30,14 +30,23 @@ def qid_lab_get(qid:int, filter_lang:str=None, include_alt:bool=False, return_al
     for lid, langs_id in zip(ls, langs):
         if not return_alt:
             if langs_id > 0 or include_alt:
-                langs = id2lang[abs(langs_id)]
+                if filter_lang:
+                    if len(filter_lang) == 2:
+                        langs = {(k.split('_')[0] if '_' in k else k[:2]) for k in id2lang[abs(langs_id)]}
+                    else:
+                        langs = id2lang[abs(langs_id)]
                 if not filter_lang or filter_lang in langs:
                     rec[trie.restore_key(lid)] = langs
         else:
             l = trie.restore_key(lid)
             rec[l] = set()
             for lang_id in id2lang[abs(langs_id)]:
-                 rec[l].add((lang_id, langs_id > 0))
+                if lang_id == 'sh_Latn':
+                    rec[l].add(('hr_Latn', langs_id > 0))
+                    rec[l].add(('sr_Latn', langs_id > 0))
+                    rec[l].add(('bs_Latn', langs_id > 0))
+                else:
+                    rec[l].add((lang_id, langs_id > 0))
     return rec
 
 
@@ -72,5 +81,5 @@ if __name__ == '__main__':
     #print(qid_lab_get(191701, include_alt=True))
     #print(qid_lab_get(177053, include_alt=True))
     #print(qid_lab_get(177053, lang='th', include_alt=True))
-    #print(qid_lab_get(15732892, lang='th'))
-    print(qid_lab_get(31,  include_alt=True, return_alt=True))
+    #print(qid_lab_get(15732892, filter_lang='th'))
+    print(qid_lab_get(901,  include_alt=True, return_alt=True))

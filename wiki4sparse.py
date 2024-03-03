@@ -55,9 +55,12 @@ def extract(line):
                 ni = trie[nl]
                 try:
                     scr = get_scripts(nl, True)[0][0]
-                    if v["language"].count('-') == 1 and len(v["language"].split('-')[-1])==2:
+                    if v["language"].count('-') == 1 and len(v["language"].split('-')[-1]) == 2:
                         lang, cc = v["language"].split('-')
                         cc = '_'+cc.upper()
+                    elif v["language"].count('-') == 1 and len(v["language"].split('-')[-1]) == 4:
+                        lang, scr = v["language"].split('-')
+                        cc = scr.title()
                     else:
                         lang, cc = v["language"], ''
                     lang = f'{lang}_{scr}{cc}'
@@ -295,7 +298,7 @@ if __name__ == '__main__':
         np.savez_compressed(f'{DATA_DIR}/desc', descl=descl)
 
 
-    if True:
+    if False:
         j = json.load(open(f'{DATA_DIR}/label4sparse.json'))
         QUS = int(j['maxq'])
         graph4sparse = open(f'{BASE_DIR}/graph4sparse.tmp', 'r')
