@@ -41,7 +41,12 @@ def qid_lab_get(qid:int, filter_lang:str=None, include_alt:bool=False, return_al
             l = trie.restore_key(lid)
             rec[l] = set()
             for lang_id in id2lang[abs(langs_id)]:
-                 rec[l].add((lang_id, langs_id > 0))
+                if lang_id == 'sh_Latn':
+                    rec[l].add(('hr_Latn', langs_id > 0))
+                    rec[l].add(('sr_Latn', langs_id > 0))
+                    rec[l].add(('bs_Latn', langs_id > 0))
+                else:
+                    rec[l].add((lang_id, langs_id > 0))
     return rec
 
 
