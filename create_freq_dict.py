@@ -32,7 +32,7 @@ if __name__ == '__main__':
         maxq = qid_lab.shape[0]
         START = 30_000_000
         END = maxq
-        fn = '/projekti/mondodb/lists/wiki_freq_dict_from30plus.pickle'
+        fn = '/projekti/mondodb/lists/wiki_freq_dict_from_30.pickle'
         dic = defaultdict(Counter)
 
         # maxq = 1000
@@ -40,18 +40,18 @@ if __name__ == '__main__':
         for qid in range(START, END):
             ent_t = named_ent[qid] if qid in named_ent else 'O'
             for label, langs in qid_lab_get(qid, return_alt=True).items():
-                for lang in langs:
+                for lang, _ in langs:
                     lang2 = None
                     if len(lang) >= 7 and lang[2] == '_':
-                        lang2 = lang[:2].split('_')
-                    if len(lang) == 2:
+                        lang2 = lang[:2]
+                    elif len(lang) == 2:
                         lang2 = lang
                     if lang2:
                         script = get_script(label)
                         for token in m_tokenize(label, lang2, script, True):
                             dic[f'{lang2}_{script}_{token}'][ent_t] += 1
             if qid % 10_000 == 0:
-                prog.set_description(len(dic))
+                prog.set_description(f'#{len(dic)}')
                 prog.update(10_000)
             if qid % 1_000_000 == 0:
                 pickle.dump(dic, open(fn, 'wb'))
