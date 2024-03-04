@@ -36,7 +36,8 @@ if __name__ == '__main__':
         dic = defaultdict(Counter)
 
         # maxq = 1000
-        for qid in tqdm(range(START, END), total=END-START):
+        prog = tqdm(total=END-START)
+        for qid in range(START, END):
             ent_t = named_ent[qid] if qid in named_ent else 'O'
             for label, langs in qid_lab_get(qid, return_alt=True).items():
                 for lang in langs:
@@ -49,6 +50,9 @@ if __name__ == '__main__':
                         script = get_script(label)
                         for token in m_tokenize(label, lang2, script, True):
                             dic[f'{lang2}_{script}_{token}'][ent_t] += 1
+            if qid % 10_000 == 0:
+                prog.set_description(len(dic))
+                prog.update(10_000)
             if qid % 1_000_000 == 0:
                 pickle.dump(dic, open(fn, 'wb'))
 
