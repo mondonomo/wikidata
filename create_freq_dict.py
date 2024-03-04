@@ -5,8 +5,8 @@ from collections import Counter, defaultdict
 import pickle
 
 import sys
-sys.path.insert(0, '/projekti/nelma')
-sys.path.insert(0, '/projekti/nelma/mondoDB')
+sys.path.insert(0, '../nelma')
+sys.path.insert(0, '../nelma/mondoDB')
 
 from mondoDB.mtokenize import m_tokenize
 from wiki_labels import qid_lab_get, qid_lab
@@ -25,7 +25,7 @@ def get_ent_type():
 if __name__ == '__main__':
     if False:
         get_ent_type()
-    (named_ent, types_c) = pickle.load(open('/backup/wikidata/wikinelma_ids.pickle', 'rb'))
+    (named_ent, types_c) = pickle.load(open('wikinelma_ids.pickle', 'rb'))
 
     if True:
         dic = defaultdict(Counter)
@@ -41,8 +41,8 @@ if __name__ == '__main__':
                         for token in m_tokenize(label, lang2, script, True):
                             dic[f'{lang2}_{script}_{token}'][ent_t] += 1
             if qid % 1_000_000 == 0:
-                pickle.dump(dic, open('/projekti/mondodb/lists/wiki_freq_dict.pickle', 'wb'))
+                pickle.dump(dic, open('wiki_freq_dict.pickle', 'wb'))
                 
-        pickle.dump(dic, open('/projekti/mondodb/lists/wiki_freq_dict.pickle', 'wb'))
+        pickle.dump(dic, open('wiki_freq_dict.pickle', 'wb'))
 
 
