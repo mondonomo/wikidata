@@ -31,7 +31,7 @@ if __name__ == '__main__':
     if True:
         START = 30_000_000
         END = 200_000_000
-        fn = 'wiki_freq_dict_from30plus.pickle'
+        fn = '/projekti/mondodb/lists/wiki_freq_dict_from30plus.pickle'
         dic = defaultdict(Counter)
 
         maxq = qid_lab.shape[0]
