@@ -39,15 +39,16 @@ if __name__ == '__main__':
         for qid in tqdm(range(START, maxq), total=maxq-START):
             ent_t = named_ent[qid] if qid in named_ent else 'O'
             for label, langs in qid_lab_get(qid, return_alt=True).items():
-                lang2 = None
-                if len(lang) >= 7 and lang[2] == '_':
-                    lang2 = lang[:2].split('_')
-                if len(lang) == 2:
-                    lang2 = lang
-                if lang2:
-                    script = get_script(label)
-                    for token in m_tokenize(label, lang2, script, True):
-                        dic[f'{lang2}_{script}_{token}'][ent_t] += 1
+                if lang in langs:
+                    lang2 = None
+                    if len(lang) >= 7 and lang[2] == '_':
+                        lang2 = lang[:2].split('_')
+                    if len(lang) == 2:
+                        lang2 = lang
+                    if lang2:
+                        script = get_script(label)
+                        for token in m_tokenize(label, lang2, script, True):
+                            dic[f'{lang2}_{script}_{token}'][ent_t] += 1
             if qid % 1_000_000 == 0:
                 pickle.dump(dic, open(fn, 'wb'))
 
