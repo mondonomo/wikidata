@@ -29,17 +29,17 @@ if __name__ == '__main__':
     (named_ent, types_c) = pickle.load(open('wikinelma_ids.pickle', 'rb'))
 
     if True:
+        maxq = qid_lab.shape[0]
         START = 30_000_000
-        END = 200_000_000
+        END = maxq
         fn = '/projekti/mondodb/lists/wiki_freq_dict_from30plus.pickle'
         dic = defaultdict(Counter)
 
-        maxq = qid_lab.shape[0]
         # maxq = 1000
-        for qid in tqdm(range(START, maxq), total=maxq-START):
+        for qid in tqdm(range(START, END), total=END-START):
             ent_t = named_ent[qid] if qid in named_ent else 'O'
             for label, langs in qid_lab_get(qid, return_alt=True).items():
-                if lang in langs:
+                for lang in langs:
                     lang2 = None
                     if len(lang) >= 7 and lang[2] == '_':
                         lang2 = lang[:2].split('_')
