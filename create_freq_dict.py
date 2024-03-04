@@ -30,6 +30,8 @@ if __name__ == '__main__':
 
     if True:
         START = 30_000_000
+        END = 200_000_000
+        fn = 'wiki_freq_dict_from30plus.pickle'
         dic = defaultdict(Counter)
 
         maxq = qid_lab.shape[0]
@@ -42,13 +44,13 @@ if __name__ == '__main__':
                     lang2 = lang[:2].split('_')
                 if len(lang) == 2:
                     lang2 = lang
-                if lang:
+                if lang2:
                     script = get_script(label)
                     for token in m_tokenize(label, lang2, script, True):
                         dic[f'{lang2}_{script}_{token}'][ent_t] += 1
             if qid % 1_000_000 == 0:
-                pickle.dump(dic, open('wiki_freq_dict_from60M.pickle', 'wb'))
-                
-        pickle.dump(dic, open('wiki_freq_from60M_dict.pickle', 'wb'))
+                pickle.dump(dic, open(fn, 'wb'))
+
+        pickle.dump(dic, open(fn, 'wb'))
 
 
