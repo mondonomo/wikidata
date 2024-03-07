@@ -22,7 +22,7 @@ if __name__ == '__main__':
         get_ent_type()
     (named_ent, types_c) = pickle.load(open('wikinelma_ids.pickle', 'rb'))
 
-    if False:
+    if True:
         sys.path.insert(0, '../nelma')
         sys.path.insert(0, '../nelma/mondoDB')
 
@@ -31,9 +31,9 @@ if __name__ == '__main__':
         from wiki_labels import qid_lab_get, qid_lab
 
         maxq = qid_lab.shape[0]
-        START = 30_000_000#+30_000_000
-        END = START+20_000_000
-        fn = 'wiki_freq_dict_from_30_to_50.pickle'
+        START = 90_000_000
+        END = START+15_000_000
+        fn = 'wiki_freq_dict_from_90_to_105.pickle'
         if True:
             dic = defaultdict(Counter)
         else:
@@ -61,12 +61,12 @@ if __name__ == '__main__':
 
         pickle.dump(dic, open(fn, 'wb'))
 
-    if True:
+    if False:
         fs = sorted(glob.glob('/projekti/wikidata/wiki_freq_dict*.pickle'))[::-1]
         d_all = {}
         for fn in fs:
             print('loading ', fn)
-            d = pickle.load(fn)
+            d = pickle.load(open(fn, 'rb'))
             if not d_all:
                 d_all = d
             else:
