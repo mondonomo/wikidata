@@ -5,13 +5,7 @@ from collections import Counter, defaultdict
 import pickle
 
 import sys
-sys.path.insert(0, '../nelma')
-sys.path.insert(0, '../nelma/mondoDB')
-
-from mondoDB.mtokenize import m_tokenize
-from mondoDB.get_script import get_script
-from wiki_labels import qid_lab_get, qid_lab
-
+import glob
 
 def get_ent_type():
     named_ent = {}
@@ -28,11 +22,18 @@ if __name__ == '__main__':
         get_ent_type()
     (named_ent, types_c) = pickle.load(open('wikinelma_ids.pickle', 'rb'))
 
-    if True:
+    if False:
+        sys.path.insert(0, '../nelma')
+        sys.path.insert(0, '../nelma/mondoDB')
+
+        from mondoDB.mtokenize import m_tokenize
+        from mondoDB.get_script import get_script
+        from wiki_labels import qid_lab_get, qid_lab
+
         maxq = qid_lab.shape[0]
-        START = 30_000_000+60_000_000
-        END = maxq
-        fn = 'wiki_freq_dict_from_90.pickle'
+        START = 30_000_000#+30_000_000
+        END = START+20_000_000
+        fn = 'wiki_freq_dict_from_30_to_50.pickle'
         if True:
             dic = defaultdict(Counter)
         else:
@@ -53,11 +54,30 @@ if __name__ == '__main__':
                         for token in m_tokenize(label, lang2, script, True):
                             dic[f'{lang2}_{script}_{token}'][ent_t] += 1
             if qid % 10_000 == 0:
-                prog.set_description(f'#{len(dic)}')
+                prog.set_description(f'S: {qid} #{len(dic)}')
                 prog.update(10_000)
             #if qid % 10_000_000 == 0:
             #    pickle.dump(dic, open(fn, 'wb'))
 
         pickle.dump(dic, open(fn, 'wb'))
+
+    if True:
+        fs = sorted(glob.glob('/projekti/wikidata/wiki_freq_dict*.pickle'))[::-1]
+        d_all = {}
+        for fn in fs:
+            print('loading ', fn)
+            d = pickle.load(fn)
+            if not d_all:
+                d_all = d
+            else:
+                print('joining ...')
+                d_all = {key: d.get(key, Counter()) + d_all.get(key, Counter()) for key in set(d.keys()) | set(d_all.keys())}
+            print('joined ', len(d))
+        print('saving ...')
+        fo = gzip.open('/projekti/mondodb/lists/wikidata_token.tsv.gz', 'wt')
+        for k, v in d_all.items():
+            fo.write(f'{k}\t{v["per"]}\t{v["org"]}\t{v["loc"]}\t{v["O"]}\n')
+        fo.close()
+        print('done!')
 
 
