@@ -22,7 +22,7 @@ if __name__ == '__main__':
         get_ent_type()
     (named_ent, types_c) = pickle.load(open('wikinelma_ids.pickle', 'rb'))
 
-    if True:
+    if False:
         sys.path.insert(0, '../nelma')
         sys.path.insert(0, '../nelma/mondoDB')
 
@@ -31,9 +31,9 @@ if __name__ == '__main__':
         from wiki_labels import qid_lab_get, qid_lab
 
         maxq = qid_lab.shape[0]
-        START = 90_000_000
-        END = START+15_000_000
-        fn = 'wiki_freq_dict_from_90_to_105.pickle'
+        START = 90_000_000+15_000_000
+        END = maxq
+        fn = 'wiki_freq_dict_from_105_to_end.pickle'
         if True:
             dic = defaultdict(Counter)
         else:
@@ -60,23 +60,28 @@ if __name__ == '__main__':
             #    pickle.dump(dic, open(fn, 'wb'))
 
         pickle.dump(dic, open(fn, 'wb'))
+        dict = None
 
-    if False:
+    if True:
         fs = sorted(glob.glob('/projekti/wikidata/wiki_freq_dict*.pickle'))[::-1]
         d_all = {}
         for fn in fs:
             print('loading ', fn)
             d = pickle.load(open(fn, 'rb'))
             if not d_all:
-                d_all = d
+                d_all = {k: (v["per"], v["org"], v["loc"], v["O"]) for k, v in d.items()}
             else:
                 print('joining ...')
-                d_all = {key: d.get(key, Counter()) + d_all.get(key, Counter()) for key in set(d.keys()) | set(d_all.keys())}
-            print('joined ', len(d))
+                d_all.update({k: (d[k]["per"]+d_all[k][0], d[k]["org"]+d_all[k][1], d[k]["loc"]+d_all[k][2],
+                                d[k]["O"]+d_all[k][3]) for k in d_all.keys() & d.keys()})
+                d_all.update({k: (d[k]["per"], d[k]["org"], d[k]["loc"], d[k]["O"]) for k in
+                              set(d.keys()).difference(d_all.keys())})
+
+            print('joined ', len(d_all))
         print('saving ...')
         fo = gzip.open('/projekti/mondodb/lists/wikidata_token.tsv.gz', 'wt')
         for k, v in d_all.items():
-            fo.write(f'{k}\t{v["per"]}\t{v["org"]}\t{v["loc"]}\t{v["O"]}\n')
+            fo.write(f'{k}\t'+'\t'.join([str(a) for a in v])+'\n')
         fo.close()
         print('done!')
 
