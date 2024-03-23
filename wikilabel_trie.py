@@ -11,7 +11,7 @@ if __name__ == '__main__':
     WIKI_D = '/backup/wikidata/'
     fi = gzip.open(f'{WIKI_D}wikil.jsonl.gz', 'rt')
     rec = {}
-    pbar = tqdm(total=98_123_689)
+    pbar = tqdm(total=105_123_689)
     labels = set()
     uk = 0
     while True:

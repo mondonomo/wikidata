@@ -1,4 +1,4 @@
-# wikizemlja
+# prepare Tries with labels and description for wikilabel
 import gzip, io
 import json
 import orjson
@@ -108,8 +108,9 @@ def extract(line):
 
 if __name__ == '__main__':
 
+    WIKI_O = 'data/'
+    WIKI_D = '/backup/wikidata/'
     if True:
-        WIKI_D = '/backup/wikidata/'
         fi = gzip.open(f'{WIKI_D}wikil.jsonl.gz')
         rec = {}
         pbar = tqdm(total=100_123_689)
@@ -128,13 +129,12 @@ if __name__ == '__main__':
         labels = tuple(labels)
         trie = marisa_trie.Trie(labels)
         labels = None
-        WIKI_O = 'data/'
         trie.save(f'{WIKI_O}labels.trie')
         print('trie saved')
 
     print('loading trie')
     trie = marisa_trie.Trie()
-    trie.load(f'{DATA_DIR}/labels.trie')
+    trie.load(f'{WIKI_O}/labels.trie')
     print('trie loaded')
 
     pmap = Pool(30)

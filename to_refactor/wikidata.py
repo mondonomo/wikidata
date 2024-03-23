@@ -21,7 +21,6 @@ COMPRESSED = True
 
 fob=open('wikidata_bad.txt', 'w')
 
-ž
 
 def cl(s):
     c = zag.sub('', s).strip()
@@ -50,7 +49,7 @@ def extractLabels(l):
     rec = {r: list(v) for r, v in labelitems.items() if r and len(r) > 0}
     return rec
 
-wi
+
 def processw(line, onlyLabels=ONLY_LABELS):
     wiki_ent = {}
     wikiname = {}
@@ -213,7 +212,7 @@ if __name__ == '__main__':
         wikiname_all = gzip.open(f'{BASE_DIR}/wikiname.jsonl.gz', 'wt')
         wikil_all = gzip.open(f'{BASE_DIR}/wikil.jsonl.gz', 'wt')
         wiki_loc = gzip.open(f'{BASE_DIR}/wikiloc.jsonl.gz', 'wt')
-e
+
         start = datetime.now()
         br, brr = 0, 0
         tmp = []
@@ -273,7 +272,7 @@ e
                 qs = req.findall(l)
                 qus.update(qs)
         len(qus)
-        for l in tqdm(open(f'{BASE_DIR}/wikil.jsonl'), total=95_444_694):
+        for l in tqdm(open(f'{BASE_DIR}/wikil.jsonl'), total=105_444_694):
             j = orjson.loads(l)
             wikiid = j['wiki_id']
             if wikiid in qus:
