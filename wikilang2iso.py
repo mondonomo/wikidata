@@ -38,7 +38,7 @@ def load_from_airtable():
             elif v['Status'] == 'romanized':
                 bod += 0.2
             elif v['Status'] == 'foreign':
-                bod += -0.5
+                bod += -5
         if bod>1.1:
             lang2cc[f'{lang}'][c] = max(bod, lang2cc[f'{lang}'][c])
     api = Api(api_key)
