@@ -1,7 +1,6 @@
 import logging
 import sys
 sys.path.insert(0, '/projekti/mondoAPI')
-sys.path.insert(0, '/projekti/nelma')
 #
 import gzip
 from collections import Counter, defaultdict
@@ -10,11 +9,11 @@ import pyarrow.parquet as pq
 
 from wiki_labels import qid_lab_get
 from wikilang2iso import get_wiki_cc, iso2w, cc2lang, q2cc, cc_weights, w2iso
-# from pnu.parse import parse
 # from api.db import db
 from pnu.detect_lang_scr import get_script
-from pnu.parse import parse_known_parts, parse, spans_to_tags, tag_set
-from model.dataset import nelma_schema, types_d, cc_d, lang_d, script_d, types_i, cc_i, lang_i, script_i
+from pnu.parse_dict import parse_known_parts, spans_to_tags, tag_set
+from api.db import langs2id, type_lang_i, cci, types
+from model.dataset import nelma_schema
 from tqdm import tqdm
 import random
 from json import loads
@@ -55,7 +54,7 @@ def proc(lng):
 
     native_lang = None
     if 'native_language' in j and j['native_language']:
-        langs = Counter([iso2w[q[5:]][:2] for q in j['native_language'] if q[5:] in iso2w and iso2w[q[5:]][:2] in lang_i])
+        langs = Counter([iso2w[q[5:]][:2] for q in j['native_language'] if q[5:] in iso2w])
         native_lang = langs.most_common()[0][0] if langs else ''
     else:
         langs = Counter()
@@ -124,7 +123,7 @@ def proc(lng):
         else:
             tags = ''
 
-        rec.append({'name': name, 'tags': tags, 'type': types_i[v1[0]], 'cc': cc_i[v1[1]], 'lang': lang_i[v1[2]], 'script': script_i[v1[3]]})
+        rec.append({'name': name, 'tags': tags, 'type': v1[0], 'cc': v1[1], 'lang': v1[2], 'script': v1[3]})
 
     return rec
 
