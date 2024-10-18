@@ -18,13 +18,13 @@ from scipy.sparse.linalg import expm
 import sys
 sys.path.insert(0, '/projekti/mondoAPI')
 from pnu.text_utils import norm_pname
-from pnu.detect_lang_scr import get_provenance, get_scripts
+from pnu.detect_lang_scr import get_provenance, get_script
 import gzip
 
 BASE_DIR = '/backup/wikidata'
 DATA_DIR = f'{Path(__file__).resolve().parent}/data'
 
-zag = re.compile(' ?\([^\)]*\)')
+zag = re.compile(' ?\\([^\\)]*\\)')
 resplit = re.compile('/|\n')
 
 P2i = {'P31': 1, 'P279': 1, 'P39':.8, 'P631':0.95, 'P106':.8, 'P171': .9,  'P373':.9, 'P010':.9, 'P361': .8,  'P460':.95, 'P2354':.8, 'P7084':.9, 'P452':.8,
@@ -39,7 +39,7 @@ def extract(line):
     try:
         l = json.loads(l)
     except Exception as e:
-        print(e)
+        print('extract', l, e)
         return None, None, None, None
 
     if l['type'] != 'item' or l['id'][0] != 'Q':
@@ -54,7 +54,7 @@ def extract(line):
             if nl:
                 ni = trie[nl]
                 try:
-                    scr = get_scripts(nl, True)[0][0]
+                    scr = get_script(nl)
                     if v["language"].count('-') == 1 and len(v["language"].split('-')[-1]) == 2:
                         lang, cc = v["language"].split('-')
                         cc = '_'+cc.upper()
@@ -67,7 +67,7 @@ def extract(line):
                     labelitems.add(f'{str(ni)}#{lang}#M')
                     labels_lang[ni].add(lang)
                 except Exception as e:
-                    print(e)
+                    print('error label', nl, e)
 
     if 'aliases' in l:
         for k, v in dict(l['aliases']).items():
@@ -76,7 +76,7 @@ def extract(line):
                 if nl:
                     try:
                         ni = trie[nl]
-                        scr = get_scripts(nl, True)[0][0]
+                        scr = get_script(nl)
                         if v2["language"].count('-') == 1 and len(v2["language"].split('-')[-1]) == 2:
                             lang, cc = v2["language"].split('-')
                             cc = '_' + cc.upper()
@@ -86,6 +86,8 @@ def extract(line):
                         labelitems.add(f'{str(ni)}#{lang}#A')
                         labels_lang[ni].add(lang)
                     except Exception as e:
+                        print('alias', nl, e)
+                        raise
                         print(e)
 
     description = ''
@@ -110,10 +112,11 @@ if __name__ == '__main__':
 
     WIKI_O = 'data/'
     WIKI_D = '/backup/wikidata/'
-    if True:
+    NUM_ENT = 100_123_689
+    if False:
         fi = gzip.open(f'{WIKI_D}wikil.jsonl.gz')
         rec = {}
-        pbar = tqdm(total=100_123_689)
+        pbar = tqdm(total=NUM_ENT)
         labels = set()
         while True:
             tmp = fi.readlines(150_000_000)
@@ -148,7 +151,7 @@ if __name__ == '__main__':
         label4sparse = open(f'{BASE_DIR}/label4sparse.tmp', 'w')
         graph4sparse = open(f'{BASE_DIR}/graph4sparse.tmp', 'w')
         desc4sparse = open(f'{BASE_DIR}/desc4sparse.tmp', 'w')
-        pbar = tqdm(fin, total=98_364_283)
+        pbar = tqdm(fin, total=NUM_ENT)
         while True:
             lines = fin.readlines(BATCH_SIZE)
             if len(lines) == 0:

@@ -204,7 +204,7 @@ if __name__ == '__main__':
         print('počinjem ...')
 
         gotovo = False
-        pbar = tqdm(total=105264756)
+        pbar = tqdm(total=113_981_780)
 
         while not gotovo:
             lines = fin.readlines(10_000_000_000)
