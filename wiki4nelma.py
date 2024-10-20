@@ -1,5 +1,7 @@
 import logging
 import sys
+
+
 sys.path.insert(0, '/projekti/mondoAPI')
 #
 import gzip
@@ -11,7 +13,8 @@ from wiki_labels import qid_lab_get
 from wikilang2iso import get_wiki_cc, iso2w, cc2lang, q2cc, cc_weights, w2iso
 # from api.db import db
 from pnu.detect_lang_scr import get_script
-from pnu.parse_dict import parse_known_parts, spans_to_tags, tag_set
+from pnu.parse_dict import parse_known_parts, spans_to_tags, tag_set, parse_dict, tag_to_char
+from pnu.do_tokenize import do_tokenize
 from api.db import langs2id, type_lang_i, cci, types
 from model.dataset import nelma_schema
 from tqdm import tqdm
@@ -103,6 +106,7 @@ def proc(lng):
     for name, v1 in names.items():
         if v1[0][:3] == 'per' and name_parts and (not DO_SAMPLE or random() < 0.01):
             # parse
+            tags = ''
             if name_parts:
                 try:
                     logging.debug(qid)
@@ -118,8 +122,15 @@ def proc(lng):
                     logging.error('spans '+name+'\n'+str(name_parts)+'\n'+str(tags) + str(e))
                     raise
 
-            else:
-                tags = '' # TODO  parse ?
+            if not tags:
+                parsed = parse_dict(name, limit_to_lang=v[2])
+                print(parsed)
+        elif v1[0][:3] in ('org', 'loc'):
+            toks, spans = do_tokenize(name, v1[2])
+            tags = '0'*len(name)
+            for bs, es in spans:
+                tags[bs] = tag_to_char[(v1[0][:3], True)]
+                tags[bs+1:es] = tag_to_char[(v1[0][:3], False)] * (es-bs-1)
         else:
             tags = ''
 
@@ -152,7 +163,8 @@ if __name__ == '__main__':
     for i, l in tqdm(enumerate(gzip.open('/backup/wikidata/wikinelma.jsonl.gz', 'rt')), total=lenlines):
         batch.append(l)
         if len(batch) > BS or i+1 == lenlines:
-            recs = p.map(proc, batch)
+            #recs = p.map(proc, batch)
+            recs = map(proc, batch)
             batch_d = {k.name: [] for k in nelma_schema}
             for rec_batch in recs:
                 for row_dict in rec_batch:
