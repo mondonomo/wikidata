@@ -1,9 +1,6 @@
 import logging
 import sys
-
-
 sys.path.insert(0, '/projekti/mondoAPI')
-#
 import gzip
 from collections import Counter, defaultdict
 import pyarrow as pa
@@ -17,7 +14,6 @@ from pnu.parse_dict import parse_known_parts,  spans_to_tags, tag_set, parse_dic
 from pnu.parse_dict import tags as get_tags
 from pnu.do_tokenize import do_tokenize
 from api.db import langs2id, type_lang_i, cci, types
-from model.dataset import nelma_schema
 from tqdm import tqdm
 import random
 from json import loads
@@ -28,6 +24,15 @@ from random import random
 logging.basicConfig(filename='wiki4nelma_parsing.log', encoding='utf-8', level=logging.DEBUG, filemode='w')
 
 DO_SAMPLE = False
+
+nelma_schema = pa.schema([pa.field("name", pa.string()),
+                      pa.field("type", pa.string()),
+                      pa.field("cc", pa.string()),
+                      pa.field("lang", pa.string()),
+                      pa.field("script", pa.string()),
+                      pa.field("tags", pa.string()),
+                      ])
+
 
 
 def proc(lng):
