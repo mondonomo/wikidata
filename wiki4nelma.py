@@ -13,7 +13,8 @@ from wiki_labels import qid_lab_get
 from wikilang2iso import get_wiki_cc, iso2w, cc2lang, q2cc, cc_weights, w2iso
 # from api.db import db
 from pnu.detect_lang_scr import get_script
-from pnu.parse_dict import parse_known_parts, spans_to_tags, tag_set, parse_dict, tag_to_char
+from pnu.parse_dict import parse_known_parts,  spans_to_tags, tag_set, parse_dict, tag_to_char, final_seq
+from pnu.parse_dict import tags as get_tags
 from pnu.do_tokenize import do_tokenize
 from api.db import langs2id, type_lang_i, cci, types
 from model.dataset import nelma_schema
@@ -24,7 +25,7 @@ from multiprocessing import Pool
 from wiki_trie_ents import extractLabels
 from random import random
 
-logging.basicConfig(filename='wiki4nelma.log', encoding='utf-8', level=logging.DEBUG, filemode='w')
+logging.basicConfig(filename='wiki4nelma_parsing.log', encoding='utf-8', level=logging.DEBUG, filemode='w')
 
 DO_SAMPLE = False
 
@@ -104,7 +105,8 @@ def proc(lng):
                             name_parts[short_name] = tip
     rec = []
     for name, v1 in names.items():
-        if v1[0][:3] == 'per' and name_parts and (not DO_SAMPLE or random() < 0.01):
+
+        if v1[0][:3] == 'per' and name_parts:
             # parse
             tags = ''
             if name_parts:
@@ -123,14 +125,29 @@ def proc(lng):
                     raise
 
             if not tags:
-                parsed = parse_dict(name, limit_to_lang=v[2])
-                print(parsed)
+                parsed = parse_dict(name, limit_to_lang=v1[2], ignore_sequence=True, parse_spaced=False)
+                if parsed:
+                    for parsed1 in parsed:
+                        name_parts2 = {a[0]: a[1].split('_')[-1] for a in parsed1[1]}
+                        name_tags = tuple(a[1] for a in parsed[0][1])
+                        if parsed1[0] > 0.05 or len(set(name_parts.items()) & set(name_parts2.items()))>0:
+                            if name_tags in final_seq:
+                                tags = parse_known_parts(name, name_parts2)
+                                tags = spans_to_tags(name, tags)
+                                logging.info(f'parsed {name} to {" ".join(name_tags)}')
+                                break
+                        if parsed1[0] < 0.1:
+                            break
+                if not tags:
+                    logging.info(f'NOT PARSED {name}')
+
         elif v1[0][:3] in ('org', 'loc'):
             toks, spans = do_tokenize(name, v1[2])
-            tags = '0'*len(name)
+            tags = ['0']*len(name)
             for bs, es in spans:
                 tags[bs] = tag_to_char[(v1[0][:3], True)]
                 tags[bs+1:es] = tag_to_char[(v1[0][:3], False)] * (es-bs-1)
+            tags = ''.join(tags)
         else:
             tags = ''
 
