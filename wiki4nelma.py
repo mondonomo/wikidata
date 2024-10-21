@@ -181,7 +181,7 @@ if __name__ == '__main__':
         batch.append(l)
         if len(batch) > BS or i+1 == lenlines:
             #recs = p.map(proc, batch)
-            recs = map(proc, batch)
+            recs = p.map(proc, batch)
             batch_d = {k.name: [] for k in nelma_schema}
             for rec_batch in recs:
                 for row_dict in rec_batch:
