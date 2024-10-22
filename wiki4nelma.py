@@ -10,7 +10,7 @@ from wiki_labels import qid_lab_get
 from wikilang2iso import get_wiki_cc, iso2w, cc2lang, q2cc, cc_weights
 # from api.db import db
 from pnu.detect_lang_scr import get_script
-from pnu.parse_dict import parse_known_parts,  spans_to_tags, tag_set, tag_to_char, NameParser
+from pnu.parse_dict import  spans_to_tags, tag_set, tag_to_char, NameParser
 
 from pnu.do_tokenize import do_tokenize
 from tqdm import tqdm
@@ -115,13 +115,10 @@ def proc(lng):
             tags = ''
             if name_parts:
                 try:
-                    logging.debug(qid)
-                    tags = parse_known_parts(name, name_parts)
+                    tags = parser.parse_known_parts(name, name_parts)
                 except Exception as e:
                     logging.error(name + str(name_parts) + str(e))
                     tags = ''
-                if name_parts and tags == '':
-                    logging.debug('empty' + name + str(name_parts))
                 try:
                     tags = spans_to_tags(name, tags) if tags else ''
                 except Exception as e:
@@ -136,7 +133,7 @@ def proc(lng):
                         name_tags = tuple(a[1] for a in parsed[0][1])
                         if parsed1[0] > 0.05 or len(set(name_parts.items()) & set(name_parts2.items()))>0:
                             if name_tags in parser.final_seq:
-                                tags = parse_known_parts(name, name_parts2)
+                                tags = parser.parse_known_parts(name, name_parts2)
                                 tags = spans_to_tags(name, tags)
                                 logging.info(f'parsed {name} to {" ".join(name_tags)}')
                                 break
@@ -173,14 +170,15 @@ if __name__ == '__main__':
 
     p = Pool()
 
-    DEBUG = False
+    DEBUG = True
     batch = []
     BS = 10_000
 
 
     lenlines = 26852740
     br = 0
-    for i, l in tqdm(enumerate(gzip.open('/backup/wikidata/wikinelma.jsonl.gz', 'rt')), total=lenlines):
+    prog = tqdm(total=lenlines)
+    for i, l in enumerate(gzip.open('/backup/wikidata/wikinelma.jsonl.gz', 'rt')):
         batch.append(l)
         if len(batch) > BS or i+1 == lenlines:
             #recs = p.map(proc, batch)
@@ -210,6 +208,7 @@ if __name__ == '__main__':
             writer.write(t)
             writer.close()
             br += 1
+            prog.update(len(BATCH))
             batch = []
-            if DEBUG:
+            if DEBUG and br > 2:
                 break
