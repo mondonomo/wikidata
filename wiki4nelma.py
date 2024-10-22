@@ -2,28 +2,27 @@ import logging
 import sys
 sys.path.insert(0, '/projekti/mondoAPI')
 import gzip
-from collections import Counter, defaultdict
+from collections import Counter
 import pyarrow as pa
 import pyarrow.parquet as pq
 
 from wiki_labels import qid_lab_get
-from wikilang2iso import get_wiki_cc, iso2w, cc2lang, q2cc, cc_weights, w2iso
+from wikilang2iso import get_wiki_cc, iso2w, cc2lang, q2cc, cc_weights
 # from api.db import db
 from pnu.detect_lang_scr import get_script
-from pnu.parse_dict import parse_known_parts,  spans_to_tags, tag_set, parse_dict, tag_to_char, final_seq
-from pnu.parse_dict import tags as get_tags
+from pnu.parse_dict import parse_known_parts,  spans_to_tags, tag_set, tag_to_char, NameParser
+
 from pnu.do_tokenize import do_tokenize
-from api.db import langs2id, type_lang_i, cci, types
 from tqdm import tqdm
-import random
 from json import loads
 from multiprocessing import Pool
-from wiki_trie_ents import extractLabels
-from random import random
 
 logging.basicConfig(filename='wiki4nelma_parsing.log', encoding='utf-8', level=logging.DEBUG, filemode='w')
 
 DO_SAMPLE = False
+
+parser = NameParser()
+
 
 nelma_schema = pa.schema([pa.field("name", pa.string()),
                       pa.field("type", pa.string()),
@@ -130,13 +129,13 @@ def proc(lng):
                     raise
 
             if not tags:
-                parsed = parse_dict(name, limit_to_lang=v1[2], ignore_sequence=True, parse_spaced=False)
+                parsed = parser.parse_name(name, limit_to_lang=v1[2], ignore_sequence=True, parse_spaced=False)
                 if parsed:
                     for parsed1 in parsed:
                         name_parts2 = {a[0]: a[1].split('_')[-1] for a in parsed1[1]}
                         name_tags = tuple(a[1] for a in parsed[0][1])
                         if parsed1[0] > 0.05 or len(set(name_parts.items()) & set(name_parts2.items()))>0:
-                            if name_tags in final_seq:
+                            if name_tags in parser.final_seq:
                                 tags = parse_known_parts(name, name_parts2)
                                 tags = spans_to_tags(name, tags)
                                 logging.info(f'parsed {name} to {" ".join(name_tags)}')
@@ -174,19 +173,22 @@ if __name__ == '__main__':
 
     p = Pool()
 
+    DEBUG = False
     batch = []
-    BS = 1_000_000
+    BS = 10_000
 
 
-   # lines = gzip.open('/Users/davor/Downloads/wikinelma.jsonl.gz', 'rt').readlines()
-    # writer = pq.ParquetWriter("/Users/davor/Downloads/wiki.parquet", nelma_schema)
-    lenlines = 25384364
+    lenlines = 26852740
     br = 0
     for i, l in tqdm(enumerate(gzip.open('/backup/wikidata/wikinelma.jsonl.gz', 'rt')), total=lenlines):
         batch.append(l)
         if len(batch) > BS or i+1 == lenlines:
             #recs = p.map(proc, batch)
-            recs = p.map(proc, batch)
+            if not DEBUG:
+                recs = p.map(proc, batch)
+            else:
+                recs = [proc(a) for a in batch]
+
             batch_d = {k.name: [] for k in nelma_schema}
             for rec_batch in recs:
                 for row_dict in rec_batch:
@@ -194,10 +196,14 @@ if __name__ == '__main__':
                         batch_d[k].append(v)
 
             t = pa.Table.from_arrays([pa.array(batch_d['name']),
-                                      pa.DictionaryArray.from_arrays(pa.array(batch_d['type'], type=pa.uint8()), types_d),
-                                      pa.DictionaryArray.from_arrays(pa.array(batch_d['cc'], type=pa.uint8()), cc_d),
-                                      pa.DictionaryArray.from_arrays(pa.array(batch_d['lang'], type=pa.uint8()), lang_d),
-                                      pa.DictionaryArray.from_arrays(pa.array(batch_d['script'], type=pa.uint8()), script_d),
+                                      pa.array(batch_d['type'], type=pa.string()),
+                                      pa.array(batch_d['cc'], type=pa.string()),
+                                      pa.array(batch_d['lang'], type=pa.string()),
+                                      pa.array(batch_d['script'], type=pa.string()),
+                                      # pa.DictionaryArray.from_arrays(pa.array(batch_d['type'], type=pa.string()), types_d),
+                                      # pa.DictionaryArray.from_arrays(pa.array(batch_d['cc'], type=pa.string()), cc_d),
+                                      # pa.DictionaryArray.from_arrays(pa.array(batch_d['lang'], type=pa.string()), lang_d),
+                                      # pa.DictionaryArray.from_arrays(pa.array(batch_d['script'], type=pa.string()), script_d),
                                       pa.array(batch_d['tags']),
                                       ], schema=nelma_schema)
             writer = pq.ParquetWriter(f"/projekti/mondodb_lm/wiki_{br}.parquet", nelma_schema)
@@ -205,4 +211,5 @@ if __name__ == '__main__':
             writer.close()
             br += 1
             batch = []
-            #break
+            if DEBUG:
+                break
