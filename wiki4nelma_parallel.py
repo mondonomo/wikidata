@@ -62,7 +62,7 @@ def process_record(json_line):
     try:
         process_id = os.getpid()
         #logging.debug(f"Process {process_id} starting new record")
-        log_memory_usage()
+        #log_memory_usage()
 
         j = loads(json_line)
         qid = int(j['wiki_id'][1:])
@@ -125,7 +125,7 @@ def process_record(json_line):
                 for name in name_labels:
                     if name not in names:
                         scr = get_script(name)
-                        if tip and cc and lng and scr:
+                        if tip and cc and scr:
                             names[name] = (tip, cc, lng, scr)
             lng_max = f
 
@@ -137,7 +137,7 @@ def process_record(json_line):
                     names[name] = (tip, cc, native_lang, scr)
 
         # English name as transliteration
-        if tip in ('per', 'per_1', 'per_2', 'org') and langs_most_common and langs_most_common[0][0] != 'en':
+        if tip in ('per', 'per_1', 'per_2', 'org') and  langs_most_common and langs_most_common[0][0] != 'en':
             if 'en' in j['labels']:
                 for lab in j['labels']['en']:
                     if lab.isascii() and lab not in names:
@@ -223,7 +223,7 @@ def batch_to_parquet(batch_data, batch_number):
             pa.array(batch_d['cc'], type=pa.string()),
             pa.array(batch_d['lang'], type=pa.string()),
             pa.array(batch_d['script'], type=pa.string()),
-            pa.array(batch_d['tags']),
+            pa.array(batch_d['tags'], type=pa.string()),
         ], schema=nelma_schema)
 
         output_path = f"/projekti/mondodb_lm/wiki_{batch_number:04d}.parquet"
