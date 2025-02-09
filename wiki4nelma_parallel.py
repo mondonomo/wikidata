@@ -234,7 +234,9 @@ def process_file_parallel(input_file, batch_size=50_000, num_processes=None, deb
                 break
 
             # Use imap for lazy evaluation and to maintain order
+            print('processing batch', batch_number)
             results = pool.imap(process_record, batch)
+            print('writing batch', batch_number)
             batch_to_parquet(list(results), batch_number)
             batch_number += 1
             pbar.update(len(batch))

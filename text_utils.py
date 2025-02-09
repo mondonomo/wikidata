@@ -13,11 +13,11 @@ DATA_DIR = f'{BASE_DIR}/data'
 unicode_space_chars = set(chr(i) for i in range(0x10000) if unicodedata.category(chr(i)) == 'Zs')
 unicode_punctuation = set(chr(i) for i in range(0x10000)  if unicodedata.category(chr(i)).startswith('P'))
 
+zag = re.compile(r' ?\([^\)]*\)')
+remove_reg = re.compile(r'\(|\)|\.|\*|\?')
+retok = re.compile(r"[\u2008\u200B\u202F\u205F\u3000\s・·]+")
 
-zag = re.compile(' ?\([^\)]*\)')
-remove_reg = re.compile('\(|\)|\.|\*|\?')
 resplit = re.compile('/|\n')
-retok = re.compile("[\u2008\u200B\u202F\u205F\u3000\s・·]+")
 NON_SPACED_LANGUAGE_RANGES = (  # from T5
     '\u1000-\u104f',  # Burmese
     '\u4e00-\u9fff',  # CJK Unified Ideographs
