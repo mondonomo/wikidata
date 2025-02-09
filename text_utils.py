@@ -4,9 +4,15 @@ from pathlib import Path
 import json
 from collections import Counter
 from langs_codes import wikilang2provenance
+import unicodedata
+
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = f'{BASE_DIR}/data'
+
+unicode_space_chars = set(chr(i) for i in range(0x10000) if unicodedata.category(chr(i)) == 'Zs')
+unicode_punctuation = set(chr(i) for i in range(0x10000)  if unicodedata.category(chr(i)).startswith('P'))
+
 
 zag = re.compile(' ?\([^\)]*\)')
 remove_reg = re.compile('\(|\)|\.|\*|\?')
@@ -91,6 +97,7 @@ def get_provenance(text, wiki_lang, no_countries=False):
             else:
                 provs.add(prov)
     return list(provs)
+
 
 
 if __name__ == '__main__':

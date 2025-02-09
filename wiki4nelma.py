@@ -1,13 +1,11 @@
 import logging
 import sys
-from concurrent.futures import ProcessPoolExecutor
 import gzip
 from collections import Counter
 import pyarrow as pa
 import pyarrow.parquet as pq
 from json import loads
 from tqdm import tqdm
-from functools import partial
 from itertools import islice
 
 sys.path.insert(0, '/projekti/mondoAPI')
@@ -104,7 +102,7 @@ def process_record(json_line):
                 names[name] = (tip, cc, lng, scr)
 
         # english name as transliteration
-        if tip in ('per', 'org') and langs_most_common and langs_most_common[0][0] != 'en':
+        if tip in ('per', 'per_1', 'per_2', 'org') and langs_most_common and langs_most_common[0][0] != 'en':
             if 'en' in j['labels']:
                 for lab in j['labels']['en']:
                     if lab.isascii() and lab not in names:
@@ -143,7 +141,7 @@ def process_record(json_line):
                 if not tags:
                     try:
                         parsed = parser.parse_name(name, limit_to_lang=v1[2],
-                                                   ignore_sequence=True, parse_spaced=False)
+                                               ignore_sequence=True, parse_spaced=False)
                         if parsed:
                             for parsed1 in parsed:
                                 name_parts2 = {a[0]: a[1].split('_')[-1] for a in parsed1[1]}
@@ -213,40 +211,35 @@ def batch_to_parquet(batch_data, batch_number):
     writer.close()
 
 
-def process_in_batches(input_file, batch_size=50_000, num_processes=24, debug=False):
-    """Process the input file in batches using ProcessPoolExecutor"""
+def process_file(input_file, batch_size=50_000, debug=False):
+    """Process the input file sequentially in batches"""
     # Calculate total lines for progress bar
     total_lines = 26852740
-    #with gzip.open(input_file, 'rt') as f:
-    #    total_lines = sum(1 for _ in f)
-    print('total lines', total_lines)
 
-    with ProcessPoolExecutor(max_workers=num_processes) as executor:
-        batch_number = 0
-        with gzip.open(input_file, 'rt') as f:
-            with tqdm(total=total_lines) as pbar:
-                while True:
-                    # Read batch_size lines
-                    batch = list(islice(f, batch_size))
-                    if not batch:
-                        break
+    batch_number = 0
+    with gzip.open(input_file, 'rt') as f:
+        with tqdm(total=total_lines) as pbar:
+            while True:
+                # Read batch_size lines
+                batch = list(islice(f, batch_size))
+                if not batch:
+                    break
 
-                    # Process the batch
-                    results = list(executor.map(process_record, batch))
+                # Process the batch sequentially
+                results = [process_record(line) for line in batch]
 
-                    # Write results to parquet
-                    batch_to_parquet(results, batch_number)
-                    batch_number += 1
+                # Write results to parquet
+                batch_to_parquet(results, batch_number)
+                batch_number += 1
 
-                    # Update progress
-                    pbar.update(len(batch))
+                # Update progress
+                pbar.update(len(batch))
 
-                    if debug:
-                        break
+                if debug:
+                    break
 
 
 if __name__ == '__main__':
-    process_in_batches('/backup/wikidata/wikinelma.jsonl.gz',
-                       batch_size=100_000,
-                       num_processes=12,
-                       debug=False)
+    process_file('/backup/wikidata/wikinelma.jsonl.gz',
+                batch_size=100_000,
+                debug=False)
