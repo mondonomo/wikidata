@@ -72,7 +72,7 @@ def spans_to_tags(s: str, spans: Spans) -> str:
                 is_first_tag = False
     return ''.join(tags)
 
-def parse_known_parts(self, text: str, parts: Dict[str, str],
+def parse_known_parts(text: str, parts: Dict[str, str],
                       restrict_lang: Optional[Set[str]] = None) -> Spans:
     """Parse text using known name parts"""
     spans: DefaultDict[str, list] = defaultdict(list)
