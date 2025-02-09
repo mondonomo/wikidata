@@ -9,22 +9,26 @@ from tqdm import tqdm
 from itertools import islice
 import multiprocessing
 
-print('loading modules')
+print('loading modules pnu')
 # Assuming these imports are correct and set up your environment
 sys.path.insert(0, '/projekti/mondoAPI')
 from pnu.detect_lang_scr import get_script
-from pnu.parse_dict import spans_to_tags, tag_set, tag_to_char, NameParser
 from pnu.do_tokenize import do_tokenize
-from wiki_labels import qid_lab_get  # Make sure this is thread-safe
-from wikilang2iso import get_wiki_cc, iso2w, q2cc, cc_weights
 
+print('loading modules parse')
+#from pnu.parse_dict import spans_to_tags, tag_set, tag_to_char, NameParser
+from parse_simple import parse_known_parts, spans_to_tags, tag_set, tag_to_char
+print('loading modules wiki')
+from wiki_labels import qid_lab_get, data_manager
+from wikilang2iso import get_wiki_cc, iso2w, q2cc, cc_weights
+import time
+print('loading modules cc2lang')
 sys.path.insert(0, '/projekti/nelma')
 from model.cc2lang import cc2lang
 
 logging.basicConfig(filename='wiki4nelma_parsing.log', encoding='utf-8', level=logging.DEBUG, filemode='w')
 
 DO_SAMPLE = False
-parser = NameParser()  # Initialize parser *before* multiprocessing
 print('loaded modules')
 
 nelma_schema = pa.schema([
@@ -138,7 +142,7 @@ def process_record(json_line):
             if v1[0][:3] == 'per':
                 if name_parts:
                     try:
-                        tags = parser.parse_known_parts(name, name_parts)  # Use the global parser
+                        tags = parse_known_parts(name, name_parts)  # Use the global parser
                         tags = spans_to_tags(name, tags) if tags else ''
                     except Exception as e:
                         logging.error(f'Error processing {name}: {str(e)}')
@@ -217,27 +221,31 @@ def batch_to_parquet(batch_data, batch_number):
     writer.close()
 
 
-
 def process_file_parallel(input_file, batch_size=50_000, num_processes=None, debug=False):
     """Process the input file in parallel using multiprocessing."""
 
     if num_processes is None:
-        num_processes = multiprocessing.cpu_count()  # Use all available cores
+        num_processes = multiprocessing.cpu_count()
 
-    total_lines = 26852740  #  lines in the file
+    # Force initialization of data_manager before creating the pool
+    _ = data_manager.qid_lab_get(1)
+
+    total_lines = 26852740
     batch_number = 0
 
-    with gzip.open(input_file, 'rt') as f, multiprocessing.Pool(processes=num_processes) as pool, tqdm(total=total_lines) as pbar:
+    with gzip.open(input_file, 'rt') as f, \
+            multiprocessing.Pool(processes=num_processes) as pool, \
+            tqdm(total=total_lines) as pbar:
         while True:
             batch = list(islice(f, batch_size))
             if not batch:
                 break
 
-            # Use imap for lazy evaluation and to maintain order
-            print('processing batch', batch_number)
+            print('processing batch', batch_number, time.time())
             results = pool.imap(process_record, batch)
-            print('writing batch', batch_number)
+            print('writing batch', batch_number, time.time())
             batch_to_parquet(list(results), batch_number)
+            print('finish writing batch', batch_number, time.time())
             batch_number += 1
             pbar.update(len(batch))
 
@@ -245,9 +253,8 @@ def process_file_parallel(input_file, batch_size=50_000, num_processes=None, deb
                 break
 
 
-
 if __name__ == '__main__':
     process_file_parallel('/backup/wikidata/wikinelma.jsonl.gz',
-                         batch_size=10_000,
-                         num_processes=12,
+                         batch_size=100_000,
+                         num_processes=6,
                          debug=False)
