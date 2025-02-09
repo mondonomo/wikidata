@@ -61,19 +61,19 @@ def process_record(json_line):
     """Process a single JSON record"""
     try:
         process_id = os.getpid()
-        logging.debug(f"Process {process_id} starting new record")
+        #logging.debug(f"Process {process_id} starting new record")
         log_memory_usage()
 
         j = loads(json_line)
         qid = int(j['wiki_id'][1:])
         tip = j['type']
 
-        logging.debug(f"Process {process_id} processing record type {tip}")
+        #logging.debug(f"Process {process_id} processing record type {tip}")
 
         # Handle person records
         if tip == 'per':
             cc, cc_weight = get_wiki_cc({k: v1 for k, v1 in j.items() if k in cc_weights})
-            logging.debug(f"Process {process_id} got cc: {cc}")
+            #logging.debug(f"Process {process_id} got cc: {cc}")
 
             if j['gender'] == ['WIKI_Q6581097']:
                 tip = 'per_1'
@@ -94,6 +94,7 @@ def process_record(json_line):
             raise NotImplementedError
 
         if not cc:
+            logging.info(f"Skipping {j['wiki_id']}, no cc ")
             return []
         if cc == 'UK':
             cc = 'GB'
@@ -110,7 +111,7 @@ def process_record(json_line):
             langs[cc_info['main']] += 2
             langs.update(cc_info['other'])
 
-        logging.debug(f"Process {process_id} processing names")
+        #logging.debug(f"Process {process_id} processing names")
 
         # Process names
         names = {}
@@ -142,7 +143,7 @@ def process_record(json_line):
                     if lab.isascii() and lab not in names:
                         names[lab] = (tip, cc, langs_most_common[0][0], 'Latn')
 
-        logging.debug(f"Process {process_id} processing name parts")
+        #logging.debug(f"Process {process_id} processing name parts")
 
         # Process name parts
         name_parts = {}
@@ -153,7 +154,7 @@ def process_record(json_line):
                 if tip_key in tag_set:
                     for wiki_id in wiki_ids:
                         try:
-                            logging.debug(f"Process {process_id} accessing qid_lab_get")
+                            #logging.debug(f"Process {process_id} accessing qid_lab_get")
                             for label in qid_lab_get(int(wiki_id[6:])):
                                 if label not in name_parts:
                                     name_parts[label] = tip_key
@@ -162,7 +163,7 @@ def process_record(json_line):
                                 if tip_key == 'fn' and len(label) > 1:
                                     short_name = label[0] + '.'
                                     name_parts[short_name] = tip_key
-                            logging.debug(f"Process {process_id} finished qid_lab_get")
+                            #logging.debug(f"Process {process_id} finished qid_lab_get")
                         except Exception as e:
                             logging.error(f"Process {process_id} error in qid_lab_get: {str(e)}")
                             continue
@@ -189,7 +190,9 @@ def process_record(json_line):
                 'script': v1[3]
             })
 
-        logging.debug(f"Process {process_id} finished processing record")
+        if len(rec) == 0:
+            logging.info(f"Empty rec {j['wiki_id']}")
+
         return rec
 
     except Exception as e:
@@ -228,7 +231,7 @@ def batch_to_parquet(batch_data, batch_number):
         writer.write(t)
         writer.close()
 
-        logging.info(f"Process {process_id} finished writing batch {batch_number}")
+        #logging.info(f"Process {process_id} finished writing batch {batch_number}")
 
     except Exception as e:
         logging.error(f'Process {process_id} Error in batch_to_parquet: {str(e)}')
@@ -241,7 +244,7 @@ def process_file_parallel(input_file, batch_size=50_000, num_processes=None, deb
     if num_processes is None:
         num_processes = multiprocessing.cpu_count()
 
-    logging.info(f"Starting parallel processing with {num_processes} processes")
+    #logging.info(f"Starting parallel processing with {num_processes} processes")
 
     # Force initialization of data_manager before creating the pool
     _ = data_manager.qid_lab_get(1)
@@ -258,7 +261,7 @@ def process_file_parallel(input_file, batch_size=50_000, num_processes=None, deb
             if not batch:
                 break
 
-            logging.info(f"Main process starting batch {batch_number} with {len(batch)} records at {datetime.now()}")
+            #logging.info(f"Main process starting batch {batch_number} with {len(batch)} records at {datetime.now()}")
             print('processing batch', batch_number, len(batch), datetime.now())
 
             # Using imap_unordered since order doesn't matter
