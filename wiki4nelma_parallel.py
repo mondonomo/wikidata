@@ -137,7 +137,7 @@ def process_record(json_line):
                     names[name] = (tip, cc, native_lang, scr)
 
         # English name as transliteration
-        if tip in ('per', 'per_1', 'per_2', 'org') and (not langs_most_common or langs_most_common[0][0] != 'en'):
+        if tip in ('per', 'per_1', 'per_2', 'org') and langs_most_common and langs_most_common[0][0] != 'en':
             if 'en' in j['labels']:
                 for lab in j['labels']['en']:
                     if lab.isascii() and lab not in names:
@@ -281,10 +281,12 @@ def process_file_parallel(input_file, batch_size=50_000, num_processes=None, deb
                 break
 
 
+
 if __name__ == '__main__':
     try:
         logging.info("Starting script execution")
         process_file_parallel('/backup/wikidata/wikinelma.jsonl.gz',
+#        process_file_parallel('/backup/wikidata/test.jsonl.gz',
                               batch_size=100_000,
                               num_processes=6,
                               debug=False)
