@@ -118,7 +118,7 @@ def processw(line, onlyLabels=ONLY_LABELS):
                         {'name': 'affiliation', 'props': ['P69', 'P108', 'P937']},
                         ]
             elif ent_type == 'org':
-                vals = [{'name': 'country', 'props': ['P17']}, {'name': 'legal_form', 'props': ['P1454']},
+                vals = [{'name': 'country', 'props': ['P17', 'P495', 'P740']}, {'name': 'legal_form', 'props': ['P1454']},
                         {'name': 'headquarter', 'props': ['P159']}, {'name': 'web', 'props': ['P856']},
                         ]
             elif ent_type == 'loc':

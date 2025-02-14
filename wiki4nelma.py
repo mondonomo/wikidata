@@ -18,7 +18,7 @@ from wikilang2iso import get_wiki_cc, iso2w, q2cc, cc_weights
 sys.path.insert(0, '/projekti/nelma')
 from model.cc2lang import cc2lang
 
-logging.basicConfig(filename='wiki4nelma_parsing.log', encoding='utf-8', level=logging.DEBUG, filemode='w')
+logging.basicConfig(filename='wiki4nelma_parsing_test.log', encoding='utf-8', level=logging.DEBUG, filemode='w')
 
 DO_SAMPLE = False
 parser = NameParser()
@@ -240,6 +240,6 @@ def process_file(input_file, batch_size=50_000, debug=False):
 
 
 if __name__ == '__main__':
-    process_file('/backup/wikidata/wikinelma.jsonl.gz',
+    process_file('/backup/wikidata/wikinelma_test.json.gz',
                 batch_size=100_000,
                 debug=False)

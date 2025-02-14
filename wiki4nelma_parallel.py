@@ -11,6 +11,11 @@ import multiprocessing
 from datetime import datetime
 import psutil
 import os
+import sys
+sys.path.insert(0, '/projekti/nelma/model')
+from name_augmentation import ProperNameAugmenter
+aug = ProperNameAugmenter()
+
 
 # Configure logging with process ID for better debugging
 logging.basicConfig(
@@ -169,6 +174,18 @@ def process_record(json_line):
                             continue
 
         rec = []
+
+        # augmentation
+        new_names = {}
+        n_new_names = 0
+        for name, v in names.items():
+            augmented_names = aug.augment(name)
+            for new_name in augmented_names:
+                if new_name not in names and new_name not in new_names:
+                    new_names[new_name] = v
+                    n_new_name = 0
+        names.update(new_names)
+
         for name, v1 in names.items():
             tags = ''
 
@@ -181,14 +198,19 @@ def process_record(json_line):
                         logging.error(f'Process {process_id} Error processing {name}: {str(e)}')
                         continue
 
-            rec.append({
+            d = {
                 'name': name,
                 'tags': tags,
                 'type': v1[0],
                 'cc': v1[1],
                 'lang': v1[2],
                 'script': v1[3]
-            })
+            }
+            rec.append(d)
+            # repeat original name for 50%
+            if n_new_names > 0 and name not in new_names:
+                rec.append(d)
+                n_new_names -= 2
 
         if len(rec) == 0:
             logging.info(f"Empty rec {j['wiki_id']}")
